@@ -1,0 +1,7 @@
+*.pem
+*.pfx
+.env
+node_modules
+dist
+dev-dist
+storage-backend/target

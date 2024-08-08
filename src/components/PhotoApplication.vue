@@ -1,0 +1,194 @@
+<script setup lang="ts">
+    import { VRow } from "vuetify/components";
+    import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+    import { Image } from "./../functions/types";
+
+    function removePhoto() {
+        image.value = null;
+    }
+
+    const props = defineProps<{
+        takePhoto: boolean;
+    }>();
+    const emit = defineEmits<{
+        frameTaken: [Image];
+    }>();
+
+    watch(
+        props,
+        (now) => {
+            if (now.takePhoto) {
+                console.log("Externally triggered taking photo");
+                emit("frameTaken", takePicture());
+            }
+        },
+        {
+            deep: true,
+            immediate: true,
+        }
+    );
+
+    // !!! CAMERA
+
+    const storageKey = "signupCameraRotation";
+    let stream = null as MediaStream | null;
+
+    const image = ref(null as null | Image);
+    const hasImage = computed(() => {
+        return image.value != null && image.value.length > 50;
+    });
+
+    const hasCamera = ref(false);
+
+    const facingMode = ref((localStorage.getItem(storageKey) ?? "environment") as "environment" | "user");
+
+    // Access the user's camera
+    async function initCamera() {
+        console.log("Initializing Camera");
+        hasCamera.value = false;
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: facingMode.value,
+                },
+            });
+            const video = document.getElementById("video") as HTMLVideoElement;
+            if (video != null) {
+                video.srcObject = stream;
+            } else {
+                console.log("Did not find Video HTML element");
+            }
+
+            hasCamera.value = true;
+        } catch (err) {
+            console.error("Error accessing the camera:", err);
+            hasCamera.value = false;
+        }
+    }
+
+    // Take a picture
+    function takePicture(): Image {
+        const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+        const video = document.getElementById("video") as HTMLVideoElement;
+        const context = canvas.getContext("2d");
+        // Set canvas dimensions to the same as the video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        // Draw the current frame of the video onto the canvas
+        context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Get the image data from the canvas as a base64-encoded PNG
+        const imageData = canvas.toDataURL("image/png");
+
+        return imageData;
+    }
+
+    // Lock picture
+    function takeAndLockPicture() {
+        console.log("Camera Button used to hold picture");
+        const imageData: Image = takePicture();
+
+        image.value = imageData;
+        emit("frameTaken", imageData);
+    }
+
+    // Toggle the direction of the camera
+    function toggleCameraFaceingness() {
+        if (facingMode.value == "environment") {
+            facingMode.value = "user";
+        } else {
+            facingMode.value = "environment";
+        }
+        console.log("toggled to facing " + facingMode.value);
+        localStorage.setItem(storageKey, facingMode.value);
+
+        initCamera();
+    }
+
+    onMounted(() => {
+        initCamera();
+    });
+    onUnmounted(() => {
+        if (stream) {
+            stream.getTracks().forEach(function (track) {
+                track.stop();
+            });
+        }
+    });
+</script>
+
+<template>
+    <div>
+        <v-row justify="center">
+            <v-row id="camera-button-container" class="v-col-12 v-col-xl-4 v-col-lg-6 v-col-md-8 v-col-sm-10 mt-3">
+                <template v-if="hasImage">
+                    <img id="image" :src="image ?? ''" class="v-col-12" />
+                    <v-btn @click="removePhoto" icon="mdi-delete" id="abort-btn"> </v-btn>
+                </template>
+
+                <video
+                    id="video"
+                    class="v-col-12"
+                    autoplay
+                    :style="{ display: (!hasCamera || hasImage) ?? false ? 'none' : 'revert' }"
+                ></video>
+
+                <template v-if="!hasImage">
+                    <div class="v-col-12" id="video-replacement" v-if="!hasCamera">
+                        <p class="mt-8">Kamera nicht verfügbar.</p>
+                        <p>Eventuell fehlt die Freigabe / Berechtigung</p>
+                    </div>
+                    <button id="capture-btn" v-on:click="takeAndLockPicture"></button>
+                    <v-btn id="reverse-btn" icon="mdi-camera-switch" v-on:click="toggleCameraFaceingness"></v-btn>
+                </template>
+            </v-row>
+        </v-row>
+        <canvas style="display: none" id="canvas"></canvas>
+    </div>
+</template>
+
+<style scoped>
+    #close-photo-mode {
+        position: absolute;
+        right: 2em;
+        bottom: 1em;
+    }
+    #video {
+        width: 100%;
+    }
+    #image {
+        width: 100%;
+    }
+    #video-replacement {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background-color: gray;
+    }
+    #camera-button-container {
+        position: relative;
+    }
+    #capture-btn {
+        background-color: red;
+        position: absolute;
+        width: 4em;
+        height: 4em;
+        border-radius: 50%;
+        border: 0.5em black solid;
+        bottom: 2%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10; /* Ensure the button is above the video */
+    }
+    #reverse-btn {
+        position: absolute;
+        bottom: 2%;
+        right: 2%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+    }
+    #abort-btn {
+        position: absolute;
+        bottom: 2%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+</style>
