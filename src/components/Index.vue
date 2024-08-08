@@ -3,13 +3,15 @@
     import ImageDisplayApplication from "./ImageDisplayApplication.vue";
     import { Image } from "./../functions/types";
     import { ref } from "vue";
+    import useEditingTools from "./../functions/editing-tools";
 
     const testTrigger = ref(false);
 
     function handleTakenFrame(frame: Image) {
         testTrigger.value = false;
 
-        secondStage.value = frame;
+        const { drawSquare } = useEditingTools();
+        secondStage.value = drawSquare(frame, 10, 10, 20, 20, "blue");
     }
 
     const secondStage = ref(null as null | Image);
@@ -32,6 +34,8 @@
         <photo-application :take-photo="testTrigger" @frame-taken="handleTakenFrame"></photo-application>
         <image-display-application :image-to-display="secondStage"></image-display-application>
     </div>
+
+    <canvas style="display: none" id="editing-canvas"></canvas>
 </template>
 
 <style scoped></style>
