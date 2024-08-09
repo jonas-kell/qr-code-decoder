@@ -8,6 +8,8 @@ const BLACK = 0;
 const WHITE = 255;
 
 export function findersHorizontal(image: Image, threshold: number): FinderLinesFinder {
+    const thresholdPotency = Math.pow(100 - threshold, 5);
+
     const width = image.getWidth();
     const height = image.getHeight();
     const data = image.getImageData().data;
@@ -58,18 +60,18 @@ export function findersHorizontal(image: Image, threshold: number): FinderLinesF
             if (a > 0) {
                 const average_width = (a + b + c + d + e) / 7; // b1 + w1 + b3 + w1 + b1
 
-                const relA = compPC(a, average_width);
-                const relB = compPC(b, average_width);
-                const relC = compPC(c, average_width * 3);
-                const relD = compPC(d, average_width);
-                const relE = compPC(e, average_width);
+                const relA = 100 - compPC(a, average_width);
+                const relB = 100 - compPC(b, average_width);
+                const relC = 100 - compPC(c, average_width * 3);
+                const relD = 100 - compPC(d, average_width);
+                const relE = 100 - compPC(e, average_width);
 
-                const maxRelErr = Math.max(relA, relB, relC, relD, relE);
+                const compositeFit = relA * relB * relC * relD * relE;
 
                 const startCol = sum;
                 const endCol = sum + a + b + c + d + e;
 
-                if (maxRelErr < threshold) {
+                if (compositeFit > thresholdPotency) {
                     // console.log(`Pattern found at row ${y}: Start  ${startCol}, End  ${endCol}, max rel err ${maxRelErr}`);
                     res.push([y, [startCol, endCol]]);
                 } else {

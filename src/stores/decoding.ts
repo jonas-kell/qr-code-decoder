@@ -74,7 +74,7 @@ export default defineStore("decoding", () => {
         nextTick(() => {
             if (binarizedImage.value != null) {
                 // TODO set th in % (can be larger, because needs also vertical intersection)
-                const threshold = 30;
+                const threshold = 25;
                 const findersH = findersHorizontal(binarizedImage.value as Image, threshold);
                 const findersV = findersVertical(binarizedImage.value as Image, threshold);
                 findersHImage.value = drawHorizontalFinderLinesOnImage(binarizedImage.value as Image, findersH);
