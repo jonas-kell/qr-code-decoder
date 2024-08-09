@@ -3,6 +3,7 @@ import { nextTick, ref, watch } from "vue";
 import { Image } from "../functions/image";
 import {
     averageCoordinate,
+    calculateFourthCenterSquare,
     drawFinderPointsOnImage,
     drawHorizontalFinderLinesOnImage,
     drawVerticalFinderLinesOnImage,
@@ -90,7 +91,7 @@ export default defineStore("decoding", () => {
                     const clusteredFinderLocationAssumptions = kMeans(
                         finderLocationAssumptions,
                         3,
-                        Math.floor(finderLocationAssumptions.length * 1.5)
+                        Math.floor(finderLocationAssumptions.length * 4)
                     );
 
                     let clusterDrawTarget = binarizedImage.value.copyImage();
@@ -107,6 +108,10 @@ export default defineStore("decoding", () => {
                     clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [average0], "blue", 30);
                     clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [average1], "red", 30);
                     clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [average2], "green", 30);
+
+                    const fourthCenter = calculateFourthCenterSquare(average0, average1, average2);
+                    console.log(fourthCenter);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [fourthCenter], "purple", 30);
 
                     clusteredFindersLocations.value = clusterDrawTarget;
                 } else {

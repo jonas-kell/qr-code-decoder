@@ -203,7 +203,10 @@ export function kMeans(points: FinderCoordinates, k: number, maxIterations: numb
 
         // Check for convergence (if centroids do not change)
         const converged = centroids.every((centroid, index) => euclideanDistance(centroid, previousCentroids[index]) < 1e-6);
-        if (converged) break;
+        if (converged) {
+            console.log(`Converged after ${iteration} iterations`); // TODO comment out
+            break;
+        }
     }
 
     return clusters;
@@ -212,6 +215,73 @@ export function kMeans(points: FinderCoordinates, k: number, maxIterations: numb
 export function averageCoordinate(points: FinderCoordinates): FinderCoordinate {
     const x = points.reduce((sum, [x]) => sum + x, 0) / points.length;
     const y = points.reduce((sum, [, y]) => sum + y, 0) / points.length;
+
+    return [x, y];
+}
+
+function orderThreeCentersCyclically(
+    a: FinderCoordinate,
+    b: FinderCoordinate,
+    c: FinderCoordinate
+): [FinderCoordinate, FinderCoordinate, FinderCoordinate] {
+    // Function to compute the angle between a point and the centroid
+    function calculateAngle(point: FinderCoordinate, center: FinderCoordinate): number {
+        const [x, y] = point;
+        const [cx, cy] = center;
+        return Math.atan2(y - cy, x - cx);
+    }
+
+    // Function to order the points cyclically around their common center
+    function sortByAngle(points: FinderCoordinate[], center: FinderCoordinate): FinderCoordinate[] {
+        return points.sort((a, b) => calculateAngle(a, center) - calculateAngle(b, center));
+    }
+
+    function calculateAngleVec(center: FinderCoordinate, from: FinderCoordinate, to: FinderCoordinate): number {
+        const firstVec = [from[0] - center[0], from[1] - center[1]];
+        const secondVec = [to[0] - center[0], to[1] - center[1]];
+
+        const dotProduct = firstVec[0] * secondVec[0] + firstVec[1] * secondVec[1];
+        const magnitudeFirstVec = Math.sqrt(firstVec[0] ** 2 + firstVec[1] ** 2);
+        const magnitudeSecondVec = Math.sqrt(secondVec[0] ** 2 + secondVec[1] ** 2);
+
+        const cosTheta = dotProduct / (magnitudeFirstVec * magnitudeSecondVec);
+        const angleRadians = Math.acos(Math.max(-1, Math.min(1, cosTheta)));
+
+        return angleRadians;
+    }
+
+    // order cyclically
+    const commonCenter = averageCoordinate([a, b, c]);
+
+    const sortedPoints = sortByAngle([a, b, c], commonCenter) as [FinderCoordinate, FinderCoordinate, FinderCoordinate];
+
+    // make it start with the "lower left", then "top left" and finally "top right" -> search for the largest "in-between" angle
+    const [A, B, C] = sortedPoints;
+    const angleACenter = calculateAngleVec(A, C, B);
+    const angleBCenter = calculateAngleVec(B, A, C);
+    const angleCCenter = calculateAngleVec(C, B, A);
+
+    if (angleACenter > angleBCenter && angleACenter > angleCCenter) {
+        return [C, A, B];
+    }
+
+    if (angleBCenter > angleACenter && angleBCenter > angleCCenter) {
+        return [A, B, C];
+    }
+
+    if (angleCCenter > angleACenter && angleCCenter > angleCCenter) {
+        return [B, C, A];
+    }
+
+    throw Error("THIS SHOULD BE IMPOSSIBLE");
+}
+
+export function calculateFourthCenterSquare(a: FinderCoordinate, b: FinderCoordinate, c: FinderCoordinate): FinderCoordinate {
+    const [reorderedA, reorderedB, reorderedC] = orderThreeCentersCyclically(a, b, c);
+
+    // calculate the
+    const x = reorderedA[0] + reorderedC[0] - reorderedB[0];
+    const y = reorderedA[1] + reorderedC[1] - reorderedB[1];
 
     return [x, y];
 }
