@@ -39,6 +39,9 @@
         <image-display-application :image-to-display="decodingStore.blurredImage as Image | null"></image-display-application>
         <h3>Binarized</h3>
         <image-display-application :image-to-display="decodingStore.binarizedImage as Image | null"></image-display-application>
+        <h3>Finders</h3>
+        <image-display-application :image-to-display="decodingStore.findersHImage as Image | null"></image-display-application>
+        <image-display-application :image-to-display="decodingStore.findersVImage as Image | null"></image-display-application>
     </div>
 </template>
 

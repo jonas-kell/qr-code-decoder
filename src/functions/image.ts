@@ -74,6 +74,14 @@ export class Image {
         return copiedImage;
     }
 
+    public getImageData(): ImageData {
+        const width = this.getWidth();
+        const height = this.getHeight();
+        const imageData = this.ctx.getImageData(0, 0, width, height);
+
+        return imageData;
+    }
+
     public resize(targetWidth: number, targetHeight: number): Image {
         // Create a new Image instance for the resized image
         const resizedImage = new Image();
@@ -86,6 +94,21 @@ export class Image {
         resizedImage.ctx.drawImage(this.canvas, 0, 0, this.canvas.width, this.canvas.height, 0, 0, targetWidth, targetHeight);
 
         return resizedImage;
+    }
+
+    public transpose(): Image {
+        const transposedImage = new Image();
+        transposedImage.canvas.width = this.getHeight();
+        transposedImage.canvas.height = this.getWidth();
+
+        const transposedCtx = transposedImage.ctx;
+
+        // Set up transformation to rotate and flip the image to transpose
+        transposedCtx.translate(this.getHeight(), 0);
+        transposedCtx.rotate(Math.PI / 2);
+        transposedCtx.drawImage(this.canvas, 0, 0);
+
+        return transposedImage;
     }
 
     /**
@@ -146,25 +169,21 @@ export class Image {
         return copiedImage;
     }
 
-    public drawSquare(x: number, y: number, width: number, height: number, color: string): Image {
-        const copiedImage = this.copyImage();
+    public drawSquareInPlace(x: number, y: number, width: number, height: number, color: string): Image {
+        this.ctx.strokeStyle = color;
+        this.ctx.strokeRect(x, y, width, height);
 
-        copiedImage.ctx.strokeStyle = color;
-        copiedImage.ctx.strokeRect(x, y, width, height);
-
-        return copiedImage;
+        return this;
     }
 
-    public drawLine(x: number, y: number, x2: number, y2: number, color: string): Image {
-        const copiedImage = this.copyImage();
+    public drawLineInPlace(x: number, y: number, x2: number, y2: number, color: string): Image {
+        this.ctx.strokeStyle = color;
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y);
+        this.ctx.lineTo(x2, y2);
+        this.ctx.stroke();
 
-        copiedImage.ctx.strokeStyle = color;
-        copiedImage.ctx.beginPath();
-        copiedImage.ctx.moveTo(x, y);
-        copiedImage.ctx.lineTo(x2, y2);
-        copiedImage.ctx.stroke();
-
-        return copiedImage;
+        return this;
     }
 
     static async generateImage(base64encodedData: string): Promise<Image> {
@@ -187,7 +206,7 @@ export class Image {
         });
     }
 
-    private copyImage(): Image {
+    public copyImage(): Image {
         const newImage = new Image();
 
         newImage.canvas.width = this.canvas.width;

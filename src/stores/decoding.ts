@@ -1,6 +1,12 @@
 import { defineStore } from "pinia";
 import { nextTick, ref, watch } from "vue";
 import { Image } from "../functions/image";
+import {
+    drawHorizontalFinderLinesOnImage,
+    drawVerticalFinderLinesOnImage,
+    findersHorizontal,
+    findersVertical,
+} from "../functions/processing";
 
 export default defineStore("decoding", () => {
     const inputImage = ref<Image | null>(null);
@@ -20,7 +26,7 @@ export default defineStore("decoding", () => {
     watch(grayscaleImage, () => {
         nextTick(() => {
             if (grayscaleImage.value != null) {
-                const target_width = 300; // todo decide size
+                const target_width = 400; // todo decide size
                 const target_height = Math.round(
                     (grayscaleImage.value.getHeight() / grayscaleImage.value.getWidth()) * target_width
                 );
@@ -43,11 +49,30 @@ export default defineStore("decoding", () => {
     watch(blurredImage, () => {
         nextTick(() => {
             if (blurredImage.value != null) {
-                let approxBlockSize = Math.round((blurredImage.value.getWidth() + blurredImage.value.getHeight()) / 2 / 20);
+                const num_cells = 5; // todo decide parameters
+                let approxBlockSize = Math.round(
+                    (blurredImage.value.getWidth() + blurredImage.value.getHeight()) / 2 / num_cells
+                );
                 if (approxBlockSize % 2 == 0) {
                     approxBlockSize += 1;
                 }
                 binarizedImage.value = blurredImage.value.applyAdaptiveGaussianThresholding(approxBlockSize, 0.1); // todo decide parameters
+            }
+        });
+    });
+
+    const findersHImage = ref<Image | null>(null);
+    const findersVImage = ref<Image | null>(null);
+    watch(binarizedImage, () => {
+        nextTick(() => {
+            if (binarizedImage.value != null) {
+                // TODO set th in % (can be larger, because needs also vertical intersection)
+                const threshold = 25;
+                const findersH = findersHorizontal(binarizedImage.value as Image, threshold);
+                const findersV = findersVertical(binarizedImage.value as Image, threshold);
+
+                findersHImage.value = drawHorizontalFinderLinesOnImage(binarizedImage.value as Image, findersH);
+                findersVImage.value = drawVerticalFinderLinesOnImage(binarizedImage.value as Image, findersV);
             }
         });
     });
@@ -57,9 +82,11 @@ export default defineStore("decoding", () => {
         resizedImage.value = null;
         blurredImage.value = null;
         binarizedImage.value = null;
+        findersHImage.value = null;
+        findersVImage.value = null;
     }
     function start(image: Image) {
         inputImage.value = image;
     }
-    return { start, inputImage, grayscaleImage, resizedImage, blurredImage, binarizedImage };
+    return { start, inputImage, grayscaleImage, resizedImage, blurredImage, binarizedImage, findersHImage, findersVImage };
 });
