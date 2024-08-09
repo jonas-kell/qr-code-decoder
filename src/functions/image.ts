@@ -102,7 +102,7 @@ export class Image {
 
                         if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
                             const index = (ny * width + nx) * 4;
-                            const pixelValue = data[index];
+                            const pixelValue = data[index]; // Already grayscale assumed
                             sum += pixelValue;
                             sumSq += pixelValue * pixelValue;
                             count++;
@@ -117,12 +117,14 @@ export class Image {
                 const threshold = mean - C * stdDev;
                 const index = (y * width + x) * 4;
 
-                if (data[index] > threshold) {
+                // Binary thresholding
+                const pixelValue = data[index];
+                if (pixelValue > threshold) {
                     binaryData[index] = binaryData[index + 1] = binaryData[index + 2] = 255; // White
                 } else {
                     binaryData[index] = binaryData[index + 1] = binaryData[index + 2] = 0; // Black
                 }
-                binaryData[index + 3] = 255; // Alpha channel
+                binaryData[index + 3] = 255; // Alpha channel (fully opaque)
             }
         }
 

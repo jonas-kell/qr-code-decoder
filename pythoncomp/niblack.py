@@ -3,7 +3,7 @@ from skimage.filters import threshold_niblack
 import matplotlib.pyplot as plt
 
 # Load the image
-image = io.imread("image.png")
+image = io.imread("blurred.png")
 
 # Convert the image to grayscale
 gray_image = color.rgb2gray(image)  # `gray_image` will be in range [0, 1]

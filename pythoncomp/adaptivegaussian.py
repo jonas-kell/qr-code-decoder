@@ -2,7 +2,7 @@ import cv2
 import matplotlib.pyplot as plt
 
 # Load the image
-image = cv2.imread("image.png")
+image = cv2.imread("blurred.png")
 
 # Convert the image to grayscale
 gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

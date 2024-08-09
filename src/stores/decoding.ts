@@ -20,7 +20,7 @@ export default defineStore("decoding", () => {
     watch(grayscaleImage, () => {
         nextTick(() => {
             if (grayscaleImage.value != null) {
-                blurredImage.value = grayscaleImage.value.blur(3); // todo decide the blur radius
+                blurredImage.value = grayscaleImage.value.blur(0); // todo decide the blur radius
             }
         });
     });
@@ -29,7 +29,11 @@ export default defineStore("decoding", () => {
     watch(blurredImage, () => {
         nextTick(() => {
             if (blurredImage.value != null) {
-                binarizedImage.value = blurredImage.value.applyAdaptiveGaussianThresholding(3, 6); // todo decide parameters
+                let approxBlockSize = Math.round((blurredImage.value.getWidth() + blurredImage.value.getHeight()) / 2 / 20);
+                if (approxBlockSize % 2 == 0) {
+                    approxBlockSize += 1;
+                }
+                binarizedImage.value = blurredImage.value.applyAdaptiveGaussianThresholding(approxBlockSize, 0.1); // todo decide parameters
             }
         });
     });
