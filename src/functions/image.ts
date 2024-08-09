@@ -98,15 +98,34 @@ export class Image {
 
     public transpose(): Image {
         const transposedImage = new Image();
-        transposedImage.canvas.width = this.getHeight();
-        transposedImage.canvas.height = this.getWidth();
 
-        const transposedCtx = transposedImage.ctx;
+        const width = this.getWidth();
+        const height = this.getHeight();
 
-        // Set up transformation to rotate and flip the image to transpose
-        transposedCtx.translate(this.getHeight(), 0);
-        transposedCtx.rotate(Math.PI / 2);
-        transposedCtx.drawImage(this.canvas, 0, 0);
+        transposedImage.canvas.width = height;
+        transposedImage.canvas.height = width;
+
+        // Get the image data
+        const imageData = this.ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+
+        const tempData = new Uint8ClampedArray(data.length);
+
+        // Swap rows and columns
+        for (let row = 0; row < height; row++) {
+            for (let col = 0; col < width; col++) {
+                const originalIndex = (row * width + col) * 4;
+                const swappedIndex = (col * height + row) * 4;
+
+                tempData.set(data.subarray(originalIndex, originalIndex + 4), swappedIndex);
+            }
+        }
+
+        transposedImage.ctx.putImageData(
+            new ImageData(tempData, transposedImage.canvas.width, transposedImage.canvas.height),
+            0,
+            0
+        );
 
         return transposedImage;
     }
