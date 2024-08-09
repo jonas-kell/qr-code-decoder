@@ -2,10 +2,12 @@ import { defineStore } from "pinia";
 import { nextTick, ref, watch } from "vue";
 import { Image } from "../functions/image";
 import {
+    drawFinderPointsOnImage,
     drawHorizontalFinderLinesOnImage,
     drawVerticalFinderLinesOnImage,
     findersHorizontal,
     findersVertical,
+    possibleFinderPoints,
 } from "../functions/processing";
 
 export default defineStore("decoding", () => {
@@ -63,16 +65,25 @@ export default defineStore("decoding", () => {
 
     const findersHImage = ref<Image | null>(null);
     const findersVImage = ref<Image | null>(null);
+    const findersLocations = ref<Image | null>(null);
     watch(binarizedImage, () => {
         nextTick(() => {
             if (binarizedImage.value != null) {
                 // TODO set th in % (can be larger, because needs also vertical intersection)
-                const threshold = 25;
+                const threshold = 35;
                 const findersH = findersHorizontal(binarizedImage.value as Image, threshold);
                 const findersV = findersVertical(binarizedImage.value as Image, threshold);
 
                 findersHImage.value = drawHorizontalFinderLinesOnImage(binarizedImage.value as Image, findersH);
                 findersVImage.value = drawVerticalFinderLinesOnImage(binarizedImage.value as Image, findersV);
+
+                const finderLocationAssumptions = possibleFinderPoints(findersH, findersV);
+
+                findersLocations.value = drawFinderPointsOnImage(
+                    binarizedImage.value as Image,
+                    finderLocationAssumptions,
+                    "blue"
+                );
             }
         });
     });
@@ -84,9 +95,20 @@ export default defineStore("decoding", () => {
         binarizedImage.value = null;
         findersHImage.value = null;
         findersVImage.value = null;
+        findersLocations.value = null;
     }
     function start(image: Image) {
         inputImage.value = image;
     }
-    return { start, inputImage, grayscaleImage, resizedImage, blurredImage, binarizedImage, findersHImage, findersVImage };
+    return {
+        start,
+        inputImage,
+        grayscaleImage,
+        resizedImage,
+        blurredImage,
+        binarizedImage,
+        findersHImage,
+        findersVImage,
+        findersLocations,
+    };
 });

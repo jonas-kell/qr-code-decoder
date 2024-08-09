@@ -1,6 +1,8 @@
 import { Image } from "./image";
 
 export type FinderLinesFinder = [number, [number, number]][];
+export type FinderCoordinate = [number, number];
+export type FinderCoordinates = FinderCoordinate[];
 
 const BLACK = 0;
 const WHITE = 255;
@@ -113,6 +115,36 @@ export function drawVerticalFinderLinesOnImage(image: Image, finderLines: Finder
         const end = line[1][1];
 
         copyImageToDrawOn.drawLineInPlace(index, start, index, end, "orange");
+    });
+
+    return copyImageToDrawOn;
+}
+
+export function possibleFinderPoints(
+    finderLinesHorizontal: FinderLinesFinder,
+    finderLinesVertical: FinderLinesFinder
+): FinderCoordinates {
+    let res: FinderCoordinates = [];
+    finderLinesHorizontal.forEach((finderLineHorizontal) => {
+        finderLinesVertical.forEach((finderLineVertical) => {
+            if (finderLineHorizontal[0] > finderLineVertical[1][0] && finderLineHorizontal[0] < finderLineVertical[1][1]) {
+                if (finderLineVertical[0] > finderLineHorizontal[1][0] && finderLineVertical[0] < finderLineHorizontal[1][1]) {
+                    res.push([finderLineVertical[0], finderLineHorizontal[0]]);
+                }
+            }
+        });
+    });
+
+    return res;
+}
+
+export function drawFinderPointsOnImage(image: Image, coordinates: FinderCoordinates, color: string): Image {
+    const copyImageToDrawOn = image.copyImage();
+
+    coordinates.forEach((coordinate) => {
+        const size = 5;
+        copyImageToDrawOn.drawLineInPlace(coordinate[0] - size, coordinate[1], coordinate[0] + size, coordinate[1], color);
+        copyImageToDrawOn.drawLineInPlace(coordinate[0], coordinate[1] - size, coordinate[0], coordinate[1] + size, color);
     });
 
     return copyImageToDrawOn;

@@ -42,6 +42,8 @@
         <h3>Finders</h3>
         <image-display-application :image-to-display="decodingStore.findersHImage as Image | null"></image-display-application>
         <image-display-application :image-to-display="decodingStore.findersVImage as Image | null"></image-display-application>
+        <image-display-application :image-to-display="decodingStore.findersLocations as Image | null"></image-display-application>
+        <h3>Cluster/Cull-Finders</h3>
     </div>
 </template>
 
