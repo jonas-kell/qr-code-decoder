@@ -3,16 +3,16 @@
     import ImageDisplayApplication from "./ImageDisplayApplication.vue";
     import { Image } from "../functions/image";
     import { ref } from "vue";
+    import useDecodingStore from "./../stores/decoding";
 
     const testTrigger = ref(false);
+    const decodingStore = useDecodingStore();
 
     async function handleTakenFrame(frame: Image) {
         testTrigger.value = false;
 
-        secondStage.value = frame.drawSquare(10, 10, 20, 20, "blue");
+        decodingStore.start(frame);
     }
-
-    const secondStage = ref<null | Image>(null);
 </script>
 
 <template>
@@ -30,7 +30,13 @@
         </h1>
 
         <photo-application :take-photo="testTrigger" @frame-taken="handleTakenFrame"></photo-application>
-        <image-display-application :image-to-display="secondStage as Image | null"></image-display-application>
+
+        <h3>Grayscaled</h3>
+        <image-display-application :image-to-display="decodingStore.grayscaleImage as Image | null"></image-display-application>
+        <h3>Blurred</h3>
+        <image-display-application :image-to-display="decodingStore.blurredImage as Image | null"></image-display-application>
+        <h3>Binarized</h3>
+        <image-display-application :image-to-display="decodingStore.binarizedImage as Image | null"></image-display-application>
     </div>
 </template>
 
