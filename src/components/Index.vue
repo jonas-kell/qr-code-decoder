@@ -9,8 +9,7 @@
     async function handleTakenFrame(frame: Image) {
         testTrigger.value = false;
 
-        secondStage.value = frame;
-        // secondStage.value = frame.drawSquare(10, 10, 20, 20, "blue");
+        secondStage.value = frame.drawSquare(10, 10, 20, 20, "blue");
     }
 
     const secondStage = ref<null | Image>(null);
@@ -31,7 +30,7 @@
         </h1>
 
         <photo-application :take-photo="testTrigger" @frame-taken="handleTakenFrame"></photo-application>
-        <image-display-application :image-to-display="secondStage as Image"></image-display-application>
+        <image-display-application :image-to-display="secondStage as Image | null"></image-display-application>
     </div>
 </template>
 

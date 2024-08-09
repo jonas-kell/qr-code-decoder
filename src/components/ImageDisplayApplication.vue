@@ -12,8 +12,7 @@
 
     watch(props, async () => {
         if (props.imageToDisplay) {
-            const url = await props.imageToDisplay.generateDataURL();
-
+            const url = props.imageToDisplay.generateDataURL();
             imageURL.value = url;
         }
     });
