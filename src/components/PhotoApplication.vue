@@ -104,6 +104,61 @@
         initCamera();
     }
 
+    async function fileUploadDialog() {
+        return new Promise<string>((resolve, reject) => {
+            const fileInput = document.createElement("input");
+            fileInput.type = "file";
+            fileInput.accept = "image/*";
+            fileInput.multiple = false;
+
+            // Function to handle file selection
+            const handleFileSelection = (event: Event) => {
+                const input = event.target as HTMLInputElement;
+                if (input.files && input.files[0]) {
+                    const file = input.files[0];
+
+                    const reader = new FileReader();
+
+                    reader.onload = () => {
+                        if (reader.result) {
+                            // Clean up by removing the file input element
+                            document.getElementById("file_reader_target")?.removeChild(fileInput);
+
+                            resolve(reader.result as string);
+                        } else {
+                            reject(new Error("Could not read file"));
+                        }
+                    };
+
+                    reader.onerror = () => {
+                        console.error("File reading failed");
+                        reject(new Error("File reading failed"));
+                    };
+
+                    reader.readAsDataURL(file);
+                } else {
+                    console.error("File reader didn't work");
+                    reject(new Error("File reader didn't work"));
+                }
+            };
+
+            fileInput.addEventListener("change", handleFileSelection);
+
+            // Append file input to the body and trigger click
+            document.getElementById("file_reader_target")?.appendChild(fileInput);
+            fileInput.click();
+        });
+    }
+
+    async function handleFileSelection() {
+        console.log("Upload Button used to hold picture");
+        const dataURL = await fileUploadDialog();
+        const image = await Image.generateImage(dataURL);
+
+        heldImageUrl.value = dataURL;
+        emit("frameTaken", image);
+    }
+
     onMounted(() => {
         initCamera();
     });
@@ -139,10 +194,12 @@
                     </div>
                     <button id="capture-btn" v-on:click="takeAndLockPicture"></button>
                     <v-btn id="reverse-btn" icon="mdi-camera-switch" v-on:click="toggleCameraFaceingness"></v-btn>
+                    <v-btn id="upload-btn" icon="mdi-file-upload" v-on:click="handleFileSelection"></v-btn>
                 </template>
             </v-row>
         </v-row>
         <canvas style="display: none" id="canvas"></canvas>
+        <div style="display: none" id="file_reader_target"></div>
     </div>
 </template>
 
@@ -184,6 +241,14 @@
         right: 2%;
         transform: translate(-50%, -50%);
         z-index: 10;
+    }
+    #upload-btn {
+        position: absolute;
+        bottom: 2%;
+        left: 2%;
+        transform: translate(50%, -50%);
+        z-index: 10;
+        background-color: green;
     }
     #abort-btn {
         position: absolute;
