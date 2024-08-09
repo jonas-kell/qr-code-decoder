@@ -47,6 +47,8 @@
         <image-display-application
             :image-to-display="decodingStore.clusteredFindersLocations as Image | null"
         ></image-display-application>
+        <h3>Re-Project</h3>
+        <image-display-application :image-to-display="decodingStore.reProjected as Image | null"></image-display-application>
     </div>
 </template>
 

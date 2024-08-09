@@ -1,3 +1,5 @@
+import { perspectiveTransform } from "./perspective";
+import { FinderCoordinate } from "./processing";
 export class Image {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
@@ -186,6 +188,25 @@ export class Image {
 
         copiedImage.ctx.putImageData(new ImageData(binaryData, width, height), 0, 0);
         return copiedImage;
+    }
+
+    public async applyPerspectiveTransformation(
+        width: number,
+        height: number,
+        a: FinderCoordinate,
+        b: FinderCoordinate,
+        c: FinderCoordinate,
+        d: FinderCoordinate,
+        t1x: number,
+        t1y: number,
+        t2x: number,
+        t2y: number,
+        t3x: number,
+        t3y: number,
+        t4x: number,
+        t4y: number
+    ): Promise<Image> {
+        return perspectiveTransform(this, width, height, ...a, ...b, ...c, ...d, t1x, t1y, t2x, t2y, t3x, t3y, t4x, t4y);
     }
 
     public drawSquareInPlace(x: number, y: number, width: number, height: number, color: string): Image {

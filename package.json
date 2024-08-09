@@ -32,6 +32,7 @@
     },
     "dependencies": {
         "@mdi/font": "^7.2.96",
+        "glfx": "^0.0.4",
         "pinia": "^2.1.7",
         "qrcode.vue": "^3.4.1",
         "vue": "^3.4.21",

@@ -278,12 +278,19 @@ function orderThreeCentersCyclically(
     throw Error("THIS SHOULD BE IMPOSSIBLE");
 }
 
-export function calculateFourthCenterSquare(a: FinderCoordinate, b: FinderCoordinate, c: FinderCoordinate): FinderCoordinate {
+export function calculateFourthCenterSquare(
+    a: FinderCoordinate,
+    b: FinderCoordinate,
+    c: FinderCoordinate
+): [FinderCoordinate, [FinderCoordinate, FinderCoordinate, FinderCoordinate]] {
     const [reorderedA, reorderedB, reorderedC] = orderThreeCentersCyclically(a, b, c);
 
     // calculate the
     const x = reorderedA[0] + reorderedC[0] - reorderedB[0];
     const y = reorderedA[1] + reorderedC[1] - reorderedB[1];
 
-    return [x, y];
+    return [
+        [x, y],
+        [reorderedA, reorderedB, reorderedC],
+    ];
 }

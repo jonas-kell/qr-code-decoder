@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { nextTick, ref, watch } from "vue";
 import { Image } from "../functions/image";
 import {
+    FinderCoordinate,
     averageCoordinate,
     calculateFourthCenterSquare,
     drawFinderPointsOnImage,
@@ -81,6 +82,7 @@ export default defineStore("decoding", () => {
     const findersVImage = ref<Image | null>(null);
     const findersLocations = ref<Image | null>(null);
     const clusteredFindersLocations = ref<Image | null>(null);
+    const edgePoints = ref<[FinderCoordinate, FinderCoordinate, FinderCoordinate, FinderCoordinate] | null>(null);
     watch(binarizedImage, () => {
         nextTick(() => {
             if (binarizedImage.value != null) {
@@ -120,14 +122,38 @@ export default defineStore("decoding", () => {
                     clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [average1], "red", 30);
                     clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [average2], "green", 30);
 
-                    const fourthCenter = calculateFourthCenterSquare(average0, average1, average2);
-                    console.log(fourthCenter);
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [fourthCenter], "purple", 30);
+                    const fourthCenterMeta = calculateFourthCenterSquare(average0, average1, average2);
+                    edgePoints.value = [...fourthCenterMeta[1], fourthCenterMeta[0]];
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [fourthCenterMeta[0]], "purple", 30);
 
                     clusteredFindersLocations.value = clusterDrawTarget;
                 } else {
                     console.error("Not Enough finder assumptions");
                 }
+            }
+        });
+    });
+
+    const reProjected = ref<Image | null>(null);
+    watch(clusteredFindersLocations, () => {
+        nextTick(async () => {
+            if (clusteredFindersLocations.value != null && edgePoints.value != null && binarizedImage.value != null) {
+                const offset = 30;
+                const side = 150;
+
+                reProjected.value = await binarizedImage.value.applyPerspectiveTransformation(
+                    side + 2 * offset,
+                    side + 2 * offset,
+                    ...edgePoints.value,
+                    offset, // t1x
+                    offset + side, // t1y
+                    offset, // t2x
+                    offset, // t2y
+                    offset + side, // t3x
+                    offset, // t3y
+                    offset + side, // t4x
+                    offset + side // t4y
+                );
             }
         });
     });
@@ -141,6 +167,7 @@ export default defineStore("decoding", () => {
         findersVImage.value = null;
         findersLocations.value = null;
         clusteredFindersLocations.value = null;
+        reProjected.value = null;
     }
     function start(image: Image) {
         inputImage.value = image;
@@ -156,5 +183,6 @@ export default defineStore("decoding", () => {
         findersVImage,
         findersLocations,
         clusteredFindersLocations,
+        reProjected,
     };
 });
