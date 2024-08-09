@@ -74,6 +74,11 @@ export class Image {
         return copiedImage;
     }
 
+    /**
+     * @param blockSize must be odd!!!
+     * @param C the subtraction parameter
+     * @returns
+     */
     public applyAdaptiveGaussianThresholding(blockSize: number, C: number): Image {
         const copiedImage = this.copyImage();
         const imageData = copiedImage.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
