@@ -44,6 +44,9 @@
         <image-display-application :image-to-display="decodingStore.findersVImage as Image | null"></image-display-application>
         <image-display-application :image-to-display="decodingStore.findersLocations as Image | null"></image-display-application>
         <h3>Cluster/Cull-Finders</h3>
+        <image-display-application
+            :image-to-display="decodingStore.clusteredFindersLocations as Image | null"
+        ></image-display-application>
     </div>
 </template>
 

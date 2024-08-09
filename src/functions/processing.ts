@@ -138,14 +138,80 @@ export function possibleFinderPoints(
     return res;
 }
 
-export function drawFinderPointsOnImage(image: Image, coordinates: FinderCoordinates, color: string): Image {
+export function drawFinderPointsOnImage(image: Image, coordinates: FinderCoordinates, color: string, size = 5): Image {
     const copyImageToDrawOn = image.copyImage();
 
     coordinates.forEach((coordinate) => {
-        const size = 5;
         copyImageToDrawOn.drawLineInPlace(coordinate[0] - size, coordinate[1], coordinate[0] + size, coordinate[1], color);
         copyImageToDrawOn.drawLineInPlace(coordinate[0], coordinate[1] - size, coordinate[0], coordinate[1] + size, color);
     });
 
     return copyImageToDrawOn;
+}
+
+/**
+ * Calculates the Euclidean distance between two points.
+ * @param point1 - First point [x, y].
+ * @param point2 - Second point [x, y].
+ * @returns The Euclidean distance.
+ */
+function euclideanDistance(point1: FinderCoordinate, point2: FinderCoordinate): number {
+    return Math.sqrt(Math.pow(point1[0] - point2[0], 2) + Math.pow(point1[1] - point2[1], 2));
+}
+
+/**
+ * Initializes centroids randomly from the given data points.
+ * @param points - The data points to choose centroids from.
+ * @param k - The number of clusters.
+ * @returns An array of initial centroids.
+ */
+function initializeCentroids(points: FinderCoordinates, k: number): FinderCoordinate[] {
+    const shuffled = points.slice().sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, k);
+}
+
+/**
+ * Performs K-means clustering.
+ * @param points - The data points to cluster.
+ * @param k - The number of clusters.
+ * @param maxIterations - The maximum number of iterations.
+ * @returns An array of clusters, each cluster being an array of FinderCoordinates.
+ */
+export function kMeans(points: FinderCoordinates, k: number, maxIterations: number = 100): FinderCoordinates[] {
+    let centroids = initializeCentroids(points, k);
+    let previousCentroids: FinderCoordinate[];
+    let clusters: FinderCoordinates[] = []; // is getting overridden in any case, but typescript does not get this.
+
+    for (let iteration = 0; iteration < maxIterations; iteration++) {
+        // Assign points to the nearest centroid
+        clusters = Array.from({ length: k }, () => []);
+        points.forEach((point) => {
+            const distances = centroids.map((centroid) => euclideanDistance(point, centroid));
+            const nearestIndex = distances.indexOf(Math.min(...distances));
+            clusters[nearestIndex].push(point);
+        });
+
+        // Store the old centroids to check for convergence
+        previousCentroids = centroids;
+
+        // Recalculate centroids
+        centroids = centroids.map((_, index) => {
+            const clusterPoints = clusters[index];
+            if (clusterPoints.length === 0) return previousCentroids[index]; // Handle empty clusters
+            return averageCoordinate(clusterPoints);
+        });
+
+        // Check for convergence (if centroids do not change)
+        const converged = centroids.every((centroid, index) => euclideanDistance(centroid, previousCentroids[index]) < 1e-6);
+        if (converged) break;
+    }
+
+    return clusters;
+}
+
+export function averageCoordinate(points: FinderCoordinates): FinderCoordinate {
+    const x = points.reduce((sum, [x]) => sum + x, 0) / points.length;
+    const y = points.reduce((sum, [, y]) => sum + y, 0) / points.length;
+
+    return [x, y];
 }
