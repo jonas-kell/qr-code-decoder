@@ -33,6 +33,8 @@
 
         <h3>Grayscaled</h3>
         <image-display-application :image-to-display="decodingStore.grayscaleImage as Image | null"></image-display-application>
+        <h3>Resized</h3>
+        <image-display-application :image-to-display="decodingStore.resizedImage as Image | null"></image-display-application>
         <h3>Blurred</h3>
         <image-display-application :image-to-display="decodingStore.blurredImage as Image | null"></image-display-application>
         <h3>Binarized</h3>

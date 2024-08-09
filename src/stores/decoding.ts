@@ -16,11 +16,25 @@ export default defineStore("decoding", () => {
         });
     });
 
-    const blurredImage = ref<Image | null>(null);
+    const resizedImage = ref<Image | null>(null);
     watch(grayscaleImage, () => {
         nextTick(() => {
             if (grayscaleImage.value != null) {
-                blurredImage.value = grayscaleImage.value.blur(0); // todo decide the blur radius
+                const target_width = 300; // todo decide size
+                const target_height = Math.round(
+                    (grayscaleImage.value.getHeight() / grayscaleImage.value.getWidth()) * target_width
+                );
+
+                resizedImage.value = grayscaleImage.value.resize(target_width, target_height);
+            }
+        });
+    });
+
+    const blurredImage = ref<Image | null>(null);
+    watch(resizedImage, () => {
+        nextTick(() => {
+            if (resizedImage.value != null) {
+                blurredImage.value = resizedImage.value.blur(1); // todo decide the blur radius
             }
         });
     });
@@ -40,11 +54,12 @@ export default defineStore("decoding", () => {
 
     function reset() {
         inputImage.value = null;
+        resizedImage.value = null;
         blurredImage.value = null;
         binarizedImage.value = null;
     }
     function start(image: Image) {
         inputImage.value = image;
     }
-    return { start, inputImage, grayscaleImage, blurredImage, binarizedImage };
+    return { start, inputImage, grayscaleImage, resizedImage, blurredImage, binarizedImage };
 });

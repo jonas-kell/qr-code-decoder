@@ -74,6 +74,20 @@ export class Image {
         return copiedImage;
     }
 
+    public resize(targetWidth: number, targetHeight: number): Image {
+        // Create a new Image instance for the resized image
+        const resizedImage = new Image();
+
+        // Set the dimensions of the new canvas
+        resizedImage.canvas.width = targetWidth;
+        resizedImage.canvas.height = targetHeight;
+
+        // Draw the original image onto the new canvas, resizing it
+        resizedImage.ctx.drawImage(this.canvas, 0, 0, this.canvas.width, this.canvas.height, 0, 0, targetWidth, targetHeight);
+
+        return resizedImage;
+    }
+
     /**
      * @param blockSize must be odd!!!
      * @param C the subtraction parameter
