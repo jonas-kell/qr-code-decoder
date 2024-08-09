@@ -31,10 +31,21 @@ export default defineStore("decoding", () => {
     watch(grayscaleImage, () => {
         nextTick(() => {
             if (grayscaleImage.value != null) {
-                const target_width = 400; // todo decide size
-                const target_height = Math.round(
-                    (grayscaleImage.value.getHeight() / grayscaleImage.value.getWidth()) * target_width
-                );
+                const target_larger = 400; // todo decide size
+                let target_width: number;
+                let target_height: number;
+
+                if (grayscaleImage.value.getWidth() > grayscaleImage.value.getHeight()) {
+                    target_width = target_larger;
+                    target_height = Math.round(
+                        (grayscaleImage.value.getHeight() / grayscaleImage.value.getWidth()) * target_larger
+                    );
+                } else {
+                    target_width = Math.round(
+                        (grayscaleImage.value.getWidth() / grayscaleImage.value.getHeight()) * target_larger
+                    );
+                    target_height = target_larger;
+                }
 
                 resizedImage.value = grayscaleImage.value.resize(target_width, target_height);
             }
