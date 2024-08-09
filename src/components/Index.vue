@@ -7,11 +7,11 @@
 
     const testTrigger = ref(false);
 
-    function handleTakenFrame(frame: Image) {
+    async function handleTakenFrame(frame: Image) {
         testTrigger.value = false;
 
         const { drawSquare } = useEditingTools();
-        secondStage.value = drawSquare(frame, 10, 10, 20, 20, "blue");
+        secondStage.value = await drawSquare(frame, 10, 10, 20, 20, "blue");
     }
 
     const secondStage = ref(null as null | Image);
