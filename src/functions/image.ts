@@ -1,5 +1,3 @@
-export type DataPointStruct = number[][][]; // width x height x 3
-
 export class Image {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
@@ -14,7 +12,24 @@ export class Image {
     }
 
     public drawSquare(x: number, y: number, width: number, height: number, color: string): Image {
-        return this;
+        const copiedImage = this.copyImage();
+
+        copiedImage.ctx.strokeStyle = color;
+        copiedImage.ctx.strokeRect(x, y, width, height);
+
+        return copiedImage;
+    }
+
+    public drawLine(x: number, y: number, x2: number, y2: number, color: string): Image {
+        const copiedImage = this.copyImage();
+
+        copiedImage.ctx.strokeStyle = color;
+        copiedImage.ctx.beginPath();
+        copiedImage.ctx.moveTo(x, y);
+        copiedImage.ctx.lineTo(x2, y2);
+        copiedImage.ctx.stroke();
+
+        return copiedImage;
     }
 
     static async generateImage(base64encodedData: string): Promise<Image> {
@@ -35,6 +50,17 @@ export class Image {
             img.onerror = reject;
             img.src = base64encodedData;
         });
+    }
+
+    private copyImage(): Image {
+        const newImage = new Image();
+
+        newImage.canvas.width = this.canvas.width;
+        newImage.canvas.height = this.canvas.height;
+
+        newImage.ctx.drawImage(this.canvas, 0, 0);
+
+        return newImage;
     }
 
     public getWidth() {
