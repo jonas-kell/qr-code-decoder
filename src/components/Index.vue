@@ -1,20 +1,19 @@
 <script setup lang="ts">
     import PhotoApplication from "./PhotoApplication.vue";
     import ImageDisplayApplication from "./ImageDisplayApplication.vue";
-    import { Image } from "./../functions/types";
+    import { Image } from "../functions/image";
     import { ref } from "vue";
-    import useEditingTools from "./../functions/editing-tools";
 
     const testTrigger = ref(false);
 
     async function handleTakenFrame(frame: Image) {
         testTrigger.value = false;
 
-        const { drawSquare } = useEditingTools();
-        secondStage.value = await drawSquare(frame, 10, 10, 20, 20, "blue");
+        secondStage.value = frame;
+        // secondStage.value = frame.drawSquare(10, 10, 20, 20, "blue");
     }
 
-    const secondStage = ref(null as null | Image);
+    const secondStage = ref<null | Image>(null);
 </script>
 
 <template>
@@ -32,10 +31,8 @@
         </h1>
 
         <photo-application :take-photo="testTrigger" @frame-taken="handleTakenFrame"></photo-application>
-        <image-display-application :image-to-display="secondStage"></image-display-application>
+        <image-display-application :image-to-display="secondStage as Image"></image-display-application>
     </div>
-
-    <canvas style="display: none" id="editing-canvas"></canvas>
 </template>
 
 <style scoped></style>

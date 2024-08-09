@@ -1,10 +1,10 @@
 <script setup lang="ts">
     import { VRow } from "vuetify/components";
     import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-    import { Image } from "./../functions/types";
+    import { Image } from "../functions/image";
 
     function removePhoto() {
-        image.value = null;
+        heldImageUrl.value = null;
     }
 
     const props = defineProps<{
@@ -16,10 +16,10 @@
 
     watch(
         props,
-        (now) => {
+        async (now) => {
             if (now.takePhoto) {
                 console.log("Externally triggered taking photo");
-                emit("frameTaken", takePicture());
+                emit("frameTaken", (await takePicture()).image);
             }
         },
         {
@@ -33,9 +33,9 @@
     const storageKey = "signupCameraRotation";
     let stream = null as MediaStream | null;
 
-    const image = ref(null as null | Image);
+    const heldImageUrl = ref(null as null | string);
     const hasImage = computed(() => {
-        return image.value != null && image.value.length > 50;
+        return heldImageUrl.value != null && heldImageUrl.value.length > 50;
     });
 
     const hasCamera = ref(false);
@@ -67,7 +67,7 @@
     }
 
     // Take a picture
-    function takePicture(): Image {
+    async function takePicture(): Promise<{ url: string; image: Image }> {
         const canvas = document.getElementById("canvas") as HTMLCanvasElement;
         const video = document.getElementById("video") as HTMLVideoElement;
         const context = canvas.getContext("2d");
@@ -79,16 +79,16 @@
         // Get the image data from the canvas as a base64-encoded PNG
         const imageData = canvas.toDataURL("image/png");
 
-        return imageData;
+        return { url: imageData, image: await Image.generateImage(imageData) };
     }
 
     // Lock picture
-    function takeAndLockPicture() {
+    async function takeAndLockPicture() {
         console.log("Camera Button used to hold picture");
-        const imageData: Image = takePicture();
+        const data = await takePicture();
 
-        image.value = imageData;
-        emit("frameTaken", imageData);
+        heldImageUrl.value = data.url;
+        emit("frameTaken", data.image);
     }
 
     // Toggle the direction of the camera
@@ -121,7 +121,7 @@
         <v-row justify="center">
             <v-row id="camera-button-container" class="v-col-12 v-col-xl-4 v-col-lg-6 v-col-md-8 v-col-sm-10 mt-3">
                 <template v-if="hasImage">
-                    <img id="image" :src="image ?? ''" class="v-col-12" />
+                    <img id="image" :src="heldImageUrl ?? ''" class="v-col-12" />
                     <v-btn @click="removePhoto" icon="mdi-delete" id="abort-btn"> </v-btn>
                 </template>
 
