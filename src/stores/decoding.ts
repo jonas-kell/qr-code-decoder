@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, nextTick as vueNextTick } from "vue";
 import { Image } from "../functions/image";
 import {
     FinderCoordinate,
@@ -16,11 +16,20 @@ import {
 
 export default defineStore("decoding", () => {
     const inputImage = ref<Image | null>(null);
+    const finished = ref(false);
 
     // custom next tick, that waits for browser, not for virtual dom of vue
     const nextTick = (callback: () => void) => {
         setTimeout(callback, 0);
     };
+
+    function signalFinished() {
+        console.log("TIMINGS", calculatedTimings.value);
+        finished.value = true;
+        vueNextTick(() => {
+            finished.value = false;
+        });
+    }
 
     const timings = ref<{ [key: string]: [number, null | number, number] }>({});
     function startTiming(key: string) {
@@ -213,6 +222,7 @@ export default defineStore("decoding", () => {
                     endTiming("draw clustered centers");
                 } else {
                     console.error("Not Enough finder assumptions");
+                    signalFinished();
                 }
             }
         });
@@ -249,7 +259,7 @@ export default defineStore("decoding", () => {
 
                 endTiming("reprojection");
 
-                console.log("TIMINGS", calculatedTimings.value);
+                signalFinished();
             }
         });
     });
@@ -271,6 +281,7 @@ export default defineStore("decoding", () => {
     return {
         calculatedTimings,
         start,
+        finished,
 
         // images
         inputImage,

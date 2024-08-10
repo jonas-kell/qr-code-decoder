@@ -275,7 +275,8 @@ function orderThreeCentersCyclically(
         return [B, C, A];
     }
 
-    throw Error("THIS SHOULD BE IMPOSSIBLE");
+    console.error("No ordering could be found");
+    return [A, B, C]; // just return some ordering
 }
 
 export function calculateFourthCenterSquare(

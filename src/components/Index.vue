@@ -2,39 +2,55 @@
     import PhotoApplication from "./PhotoApplication.vue";
     import ImageDisplayApplication from "./ImageDisplayApplication.vue";
     import { Image } from "../functions/image";
-    import { ref } from "vue";
+    import { ref, watch } from "vue";
     import useDecodingStore from "./../stores/decoding";
     import SliderGroup from "./SliderGroup.vue";
+    import { VCheckbox } from "vuetify/components";
 
-    const testTrigger = ref(false);
+    const externalTrigger = ref(false);
     const decodingStore = useDecodingStore();
 
     async function handleTakenFrame(frame: Image) {
-        testTrigger.value = false;
-
+        externalTrigger.value = false;
         decodingStore.start(frame);
+    }
+
+    const continuous = ref(false);
+
+    watch(
+        () => decodingStore.finished,
+        () => {
+            if (decodingStore.finished) {
+                console.log("finished");
+
+                if (continuous.value) {
+                    triggerCycleExternally();
+                }
+            }
+        }
+    );
+
+    watch(continuous, () => {
+        if (continuous.value) {
+            triggerCycleExternally();
+        }
+    });
+
+    function triggerCycleExternally() {
+        externalTrigger.value = true;
     }
 </script>
 
 <template>
     <div class="container">
-        <h1
-            @click="
-                () => {
-                    // extract a photo frame externally
-                    testTrigger = true;
-                    console.log('Externally triggered taking photo');
-                }
-            "
-        >
-            QR Code Decoder
-        </h1>
+        <h1>QR Code Decoder</h1>
 
-        <div style="text-align: center">
-            <router-link to="generate">Generate</router-link> a Code (e.g. on Smartphone for scanning)
+        <div style="display: flex; flex-direction: column; align-items: center; text-align: center">
+            <v-checkbox label="Continuous Parsing" :hide-details="true" v-model="continuous"></v-checkbox>
+            <span><router-link to="generate">Generate</router-link> a Code (e.g. on Smartphone for scanning)</span>
         </div>
 
-        <photo-application :take-photo="testTrigger" @frame-taken="handleTakenFrame"></photo-application>
+        <photo-application :take-photo="externalTrigger" @frame-taken="handleTakenFrame"></photo-application>
 
         <h3>Grayscaled</h3>
         <image-display-application :image-to-display="decodingStore.grayscaleImage as Image | null"></image-display-application>
@@ -111,6 +127,10 @@
     h2,
     h3 {
         text-align: center;
+    }
+
+    h2,
+    h3 {
         padding-top: 2em;
     }
 </style>

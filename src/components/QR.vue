@@ -10,7 +10,7 @@
 <template>
     <div class="container">
         <v-text-field v-model="value"></v-text-field>
-        <v-row justify="center">
+        <v-row justify="center" class="mt-6">
             <qrcode-vue :value="value" :size="size" level="H" id="qr" />
         </v-row>
 
