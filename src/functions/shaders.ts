@@ -1,33 +1,10 @@
 import { Image } from "./image";
 
-// https://thebookofshaders.com/edit.php
-// https://glsl.app/
+// editors to potentially debug shaders (semi helpful)
+//     https://thebookofshaders.com/edit.php
+//     https://glsl.app/
 
 export function blur(image: Image, radius: number) {
-    const canvas = document.createElement("canvas");
-    const gl = canvas.getContext("webgl");
-    if (!gl) {
-        throw Error("No webgl context");
-    }
-    const width = image.getWidth();
-    const height = image.getHeight();
-
-    canvas.width = width;
-    canvas.height = height;
-
-    // Vertex Shader Source
-    const vertexShaderSource = `
-        attribute vec2 a_position;
-        attribute vec2 a_texcoord;
-        varying vec2 v_texcoord;
-        
-        void main() {
-            gl_Position = vec4(a_position, 0.0, 1.0);
-            v_texcoord = a_texcoord;
-        }
-    `;
-
-    // Fragment Shader Source
     const fragmentShaderSource = `
         precision mediump float;
         uniform sampler2D u_texture;
@@ -48,6 +25,91 @@ export function blur(image: Image, radius: number) {
             }
             
             gl_FragColor = color * (1.0 / total);
+        }
+    `;
+
+    return webGlShaderComputation(image, fragmentShaderSource);
+}
+
+/**
+ * @param blockSize must be odd!!!
+ * @param C the subtraction parameter
+ * @returns
+ */
+export function applyAdaptiveGaussianThresholding(image: Image, blockSize: number, C: number): Image {
+    const copiedImage = image.copyImage();
+    const imageData: ImageData = image.getImageData();
+    const data = imageData.data;
+    const width = imageData.width;
+    const height = imageData.height;
+    const halfBlockSize = Math.floor(blockSize / 2);
+
+    const binaryData = new Uint8ClampedArray(data.length);
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            let sum = 0;
+            let sumSq = 0;
+            let count = 0;
+
+            for (let dy = -halfBlockSize; dy <= halfBlockSize; dy++) {
+                for (let dx = -halfBlockSize; dx <= halfBlockSize; dx++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        const index = (ny * width + nx) * 4;
+                        const pixelValue = data[index]; // Already grayscale assumed
+                        sum += pixelValue;
+                        sumSq += pixelValue * pixelValue;
+                        count++;
+                    }
+                }
+            }
+
+            const mean = sum / count;
+            const variance = sumSq / count - mean * mean;
+            const stdDev = Math.sqrt(variance);
+
+            const threshold = mean - C * stdDev;
+            const index = (y * width + x) * 4;
+
+            // Binary thresholding
+            const pixelValue = data[index];
+            if (pixelValue > threshold) {
+                binaryData[index] = binaryData[index + 1] = binaryData[index + 2] = 255; // White
+            } else {
+                binaryData[index] = binaryData[index + 1] = binaryData[index + 2] = 0; // Black
+            }
+            binaryData[index + 3] = 255; // Alpha channel (fully opaque)
+        }
+    }
+
+    copiedImage.putImageData(new ImageData(binaryData, width, height), 0, 0);
+    return copiedImage;
+}
+
+function webGlShaderComputation(image: Image, fragmentShaderSource: string): Image {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl");
+    if (!gl) {
+        throw Error("No webgl context");
+    }
+    const width = image.getWidth();
+    const height = image.getHeight();
+
+    canvas.width = width;
+    canvas.height = height;
+
+    // Vertex Shader Source
+    const vertexShaderSource = `
+        attribute vec2 a_position;
+        attribute vec2 a_texcoord;
+        varying vec2 v_texcoord;
+        
+        void main() {
+            gl_Position = vec4(a_position, 0.0, 1.0);
+            v_texcoord = a_texcoord;
         }
     `;
 
@@ -133,12 +195,12 @@ export function blur(image: Image, radius: number) {
     gl.enableVertexAttribArray(texcoordLocation);
     gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 16, 8);
 
-    // Create texture and framebuffer
+    // Create texture
     const data = image.getImageData();
     const texture = createTexture(gl, data.width, data.height, new Uint8Array(data.data));
-    const framebuffer = createFramebuffer(gl);
 
     // Render to framebuffer
+    const framebuffer = createFramebuffer(gl);
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     gl.viewport(0, 0, width, height);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -152,70 +214,11 @@ export function blur(image: Image, radius: number) {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
     // Read pixels from framebuffer
-    const blurredImageData = new Uint8ClampedArray(width * height * 4);
-    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, blurredImageData);
+    const newImageData = new Uint8ClampedArray(width * height * 4);
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, newImageData);
 
-    const blurredImage = image.copyImage();
+    const newImage = image.copyImage();
+    newImage.putImageData(new ImageData(newImageData, width, height), 0, 0);
 
-    blurredImage.putImageData(new ImageData(blurredImageData, width, height), 0, 0);
-
-    return blurredImage;
-}
-
-/**
- * @param blockSize must be odd!!!
- * @param C the subtraction parameter
- * @returns
- */
-export function applyAdaptiveGaussianThresholding(image: Image, blockSize: number, C: number): Image {
-    const copiedImage = image.copyImage();
-    const imageData: ImageData = image.getImageData();
-    const data = imageData.data;
-    const width = imageData.width;
-    const height = imageData.height;
-    const halfBlockSize = Math.floor(blockSize / 2);
-
-    const binaryData = new Uint8ClampedArray(data.length);
-
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            let sum = 0;
-            let sumSq = 0;
-            let count = 0;
-
-            for (let dy = -halfBlockSize; dy <= halfBlockSize; dy++) {
-                for (let dx = -halfBlockSize; dx <= halfBlockSize; dx++) {
-                    const nx = x + dx;
-                    const ny = y + dy;
-
-                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                        const index = (ny * width + nx) * 4;
-                        const pixelValue = data[index]; // Already grayscale assumed
-                        sum += pixelValue;
-                        sumSq += pixelValue * pixelValue;
-                        count++;
-                    }
-                }
-            }
-
-            const mean = sum / count;
-            const variance = sumSq / count - mean * mean;
-            const stdDev = Math.sqrt(variance);
-
-            const threshold = mean - C * stdDev;
-            const index = (y * width + x) * 4;
-
-            // Binary thresholding
-            const pixelValue = data[index];
-            if (pixelValue > threshold) {
-                binaryData[index] = binaryData[index + 1] = binaryData[index + 2] = 255; // White
-            } else {
-                binaryData[index] = binaryData[index + 1] = binaryData[index + 2] = 0; // Black
-            }
-            binaryData[index + 3] = 255; // Alpha channel (fully opaque)
-        }
-    }
-
-    copiedImage.putImageData(new ImageData(binaryData, width, height), 0, 0);
-    return copiedImage;
+    return newImage;
 }
