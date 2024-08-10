@@ -1,6 +1,8 @@
 import { Image } from "./image";
 import * as fx from "glfx";
 
+// https://evanw.github.io/glfx.js/
+
 export async function perspectiveTransform(
     image: Image,
     width: number,

@@ -118,7 +118,10 @@ export default defineStore("decoding", () => {
     const binarizationNumCellsMin = ref<number>(2);
     const binarizationNumCellsMax = ref<number>(15);
     const binarizationNumCells = ref<number>(5);
-    watch([blurredImage, binarizationNumCells], () => {
+    const binarizationCNumberMin = ref<number>(0);
+    const binarizationCNumberMax = ref<number>(70);
+    const binarizationCNumber = ref<number>(10);
+    watch([blurredImage, binarizationNumCells, binarizationCNumber], () => {
         nextTick(() => {
             if (blurredImage.value != null) {
                 startTiming("threshold");
@@ -126,10 +129,10 @@ export default defineStore("decoding", () => {
                 let approxBlockSize = Math.round(
                     (blurredImage.value.getWidth() + blurredImage.value.getHeight()) / 2 / binarizationNumCells.value
                 );
-                if (approxBlockSize % 2 == 0) {
-                    approxBlockSize += 1;
-                }
-                binarizedImage.value = blurredImage.value.applyAdaptiveGaussianThresholding(approxBlockSize, 0.1); // todo decide parameters
+                binarizedImage.value = blurredImage.value.applyAdaptiveGaussianThresholding(
+                    approxBlockSize,
+                    binarizationCNumber.value / 100
+                );
 
                 endTiming("threshold");
             }
@@ -147,7 +150,6 @@ export default defineStore("decoding", () => {
     watch([binarizedImage, findersThreshold], () => {
         nextTick(() => {
             if (binarizedImage.value != null) {
-                // TODO set th in % (can be larger, because needs also vertical intersection)
                 startTiming("search Finders");
 
                 const threshold = findersThreshold.value;
@@ -292,6 +294,9 @@ export default defineStore("decoding", () => {
         binarizationNumCellsMin,
         binarizationNumCellsMax,
         binarizationNumCells,
+        binarizationCNumberMin,
+        binarizationCNumberMax,
+        binarizationCNumber,
         findersThresholdMin,
         findersThresholdMax,
         findersThreshold,

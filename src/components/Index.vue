@@ -64,6 +64,13 @@
             label="Binarization Number Cells"
             :only-end="true"
         ></slider-group>
+        <slider-group
+            v-model="decodingStore.binarizationCNumber"
+            :min="decodingStore.binarizationCNumberMin"
+            :max="decodingStore.binarizationCNumberMax"
+            label="Binarization C Number"
+            :only-end="true"
+        ></slider-group>
         <image-display-application :image-to-display="decodingStore.binarizedImage as Image | null"></image-display-application>
         <h3>Finders</h3>
         <slider-group
