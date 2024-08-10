@@ -374,7 +374,7 @@ function orderThreeCentersCyclically(
         return [A, B, C];
     }
 
-    if (angleCCenter > angleACenter && angleCCenter > angleCCenter) {
+    if (angleCCenter > angleACenter && angleCCenter > angleBCenter) {
         return [B, C, A];
     }
 

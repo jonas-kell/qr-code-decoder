@@ -242,10 +242,10 @@ export default defineStore("decoding", () => {
                         clusteredFinderLocationAssumptions[2],
                         "green"
                     );
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [average0], "blue", 30);
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [average1], "red", 30);
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [average2], "green", 30);
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [fourthCenterMeta[0]], "purple", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [edgePoints.value[0]], "blue", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [edgePoints.value[1]], "red", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [edgePoints.value[2]], "green", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [edgePoints.value[3]], "purple", 30);
 
                     clusteredFindersLocations.value = clusterDrawTarget;
 
