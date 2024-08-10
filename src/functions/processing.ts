@@ -236,45 +236,70 @@ function initializeCentroids(points: FinderCoordinates, k: number): FinderCoordi
 export function weightedKMeans(
     pointsMeta: FinderCoordinateMeta[],
     k: number,
-    maxIterations: number = 100
+    maxIterations: number = 100,
+    maxTries: number = 15 // reasonable probability to choose starting points from 3 different clusters at least once (ca 1/6) -> 1-(5/6)^15 = 93%
 ): FinderCoordinateMeta[][] {
-    let centroids = initializeCentroids(
-        pointsMeta.map((pointMeta) => {
-            return pointMeta[0];
-        }),
-        k
-    );
-    let previousCentroids: FinderCoordinate[];
-    let clusters: FinderCoordinateMeta[][] = []; // is getting overridden in any case, but typescript does not get this.
+    let resultCache: FinderCoordinateMeta[][] = [];
+    let solutionDistance = -1;
 
-    for (let iteration = 0; iteration < maxIterations; iteration++) {
-        // Assign points to the nearest centroid
-        clusters = Array.from({ length: k }, () => []);
-        pointsMeta.forEach((pointMeta) => {
-            const distances = centroids.map((centroid) => euclideanDistance(pointMeta[0], centroid));
-            const nearestIndex = distances.indexOf(Math.min(...distances));
-            clusters[nearestIndex].push(pointMeta);
+    for (let tryN = 0; tryN < maxTries; tryN++) {
+        let centroids = initializeCentroids(
+            pointsMeta.map((pointMeta) => {
+                return pointMeta[0];
+            }),
+            k
+        );
+        let previousCentroids: FinderCoordinate[];
+        let clusters: FinderCoordinateMeta[][] = []; // is getting overridden in any case, but typescript does not get this.
+
+        for (let iteration = 0; iteration < maxIterations; iteration++) {
+            // Assign points to the nearest centroid
+            clusters = Array.from({ length: k }, () => []);
+            pointsMeta.forEach((pointMeta) => {
+                const distances = centroids.map((centroid) => euclideanDistance(pointMeta[0], centroid));
+                const nearestIndex = distances.indexOf(Math.min(...distances));
+                clusters[nearestIndex].push(pointMeta);
+            });
+
+            // Store the old centroids to check for convergence
+            previousCentroids = centroids;
+
+            // Recalculate centroids
+            centroids = centroids.map((_, index) => {
+                const clusterPoints = clusters[index];
+                if (clusterPoints.length === 0) return previousCentroids[index]; // Handle empty clusters
+                return averageCoordinateWeighted(clusterPoints);
+            });
+
+            // Check for convergence (if centroids do not change)
+            let converged = centroids.every((centroid, index) => euclideanDistance(centroid, previousCentroids[index]) < 1e-8);
+            if (converged) {
+                break;
+            }
+        }
+
+        let totalDistance = 0;
+        clusters.forEach((cluster, index) => {
+            const centroid = centroids[index];
+
+            cluster.forEach((meta) => {
+                totalDistance += euclideanDistance(meta[0], centroid);
+            });
         });
 
-        // Store the old centroids to check for convergence
-        previousCentroids = centroids;
-
-        // Recalculate centroids
-        centroids = centroids.map((_, index) => {
-            const clusterPoints = clusters[index];
-            if (clusterPoints.length === 0) return previousCentroids[index]; // Handle empty clusters
-            return averageCoordinateWeighted(clusterPoints);
-        });
-
-        // Check for convergence (if centroids do not change)
-        const converged = centroids.every((centroid, index) => euclideanDistance(centroid, previousCentroids[index]) < 1e-6);
-        if (converged) {
-            console.log(`Converged after ${iteration} iterations`); // TODO comment out
-            break;
+        if (solutionDistance == -1) {
+            solutionDistance = totalDistance;
+            resultCache = clusters;
+        } else {
+            if (solutionDistance > totalDistance) {
+                // found a better solution
+                solutionDistance = totalDistance;
+                resultCache = clusters;
+            }
         }
     }
 
-    return clusters;
+    return resultCache;
 }
 
 function averageCoordinate(points: FinderCoordinates): FinderCoordinate {

@@ -212,11 +212,7 @@ export default defineStore("decoding", () => {
 
                     startTiming("clustering");
 
-                    const clusteredFinderLocationAssumptionsMeta = weightedKMeans(
-                        culledFinderLocationAssumptionsMeta,
-                        3,
-                        Math.floor(finderLocationAssumptions.length * 4)
-                    );
+                    const clusteredFinderLocationAssumptionsMeta = weightedKMeans(culledFinderLocationAssumptionsMeta, 3);
 
                     endTiming("clustering");
 
