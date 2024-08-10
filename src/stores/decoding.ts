@@ -3,15 +3,15 @@ import { computed, ref, watch, nextTick as vueNextTick } from "vue";
 import { Image } from "../functions/image";
 import {
     FinderCoordinate,
-    averageCoordinate,
     calculateFourthCenterSquare,
     drawFinderPointsOnImage,
     drawHorizontalFinderLinesOnImage,
     drawVerticalFinderLinesOnImage,
     findersHorizontal,
     findersVertical,
-    kMeans,
+    weightedKMeans,
     possibleFinderPoints,
+    averageCoordinateWeighted,
 } from "../functions/processing";
 
 export default defineStore("decoding", () => {
@@ -155,8 +155,11 @@ export default defineStore("decoding", () => {
     const findersThresholdMin = ref<number>(5);
     const findersThresholdMax = ref<number>(90);
     const findersThreshold = ref<number>(25);
+    const weightExpMin = ref<number>(1);
+    const weightExpMax = ref<number>(10);
+    const weightExp = ref<number>(5);
     const edgePoints = ref<[FinderCoordinate, FinderCoordinate, FinderCoordinate, FinderCoordinate] | null>(null);
-    watch([binarizedImage, findersThreshold], () => {
+    watch([binarizedImage, findersThreshold, weightExp], () => {
         nextTick(() => {
             if (binarizedImage.value != null) {
                 startTiming("search Finders");
@@ -164,7 +167,10 @@ export default defineStore("decoding", () => {
                 const threshold = findersThreshold.value;
                 const findersH = findersHorizontal(binarizedImage.value as Image, threshold);
                 const findersV = findersVertical(binarizedImage.value as Image, threshold);
-                const finderLocationAssumptions = possibleFinderPoints(findersH, findersV);
+                const finderLocationAssumptionsMeta = possibleFinderPoints(findersH, findersV, weightExp.value);
+                const finderLocationAssumptions = finderLocationAssumptionsMeta.map((assumption) => {
+                    return assumption[0];
+                });
 
                 endTiming("search Finders");
 
@@ -183,8 +189,8 @@ export default defineStore("decoding", () => {
                 if (finderLocationAssumptions.length >= 3) {
                     startTiming("clustering");
 
-                    const clusteredFinderLocationAssumptions = kMeans(
-                        finderLocationAssumptions,
+                    const clusteredFinderLocationAssumptionsMeta = weightedKMeans(
+                        finderLocationAssumptionsMeta,
                         3,
                         Math.floor(finderLocationAssumptions.length * 4)
                     );
@@ -193,9 +199,9 @@ export default defineStore("decoding", () => {
 
                     startTiming("fourth Center");
 
-                    const average0 = averageCoordinate(clusteredFinderLocationAssumptions[0]);
-                    const average1 = averageCoordinate(clusteredFinderLocationAssumptions[1]);
-                    const average2 = averageCoordinate(clusteredFinderLocationAssumptions[2]);
+                    const average0 = averageCoordinateWeighted(clusteredFinderLocationAssumptionsMeta[0]);
+                    const average1 = averageCoordinateWeighted(clusteredFinderLocationAssumptionsMeta[1]);
+                    const average2 = averageCoordinateWeighted(clusteredFinderLocationAssumptionsMeta[2]);
 
                     const fourthCenterMeta = calculateFourthCenterSquare(average0, average1, average2);
                     edgePoints.value = [...fourthCenterMeta[1], fourthCenterMeta[0]];
@@ -204,6 +210,11 @@ export default defineStore("decoding", () => {
 
                     startTiming("draw clustered centers");
 
+                    const clusteredFinderLocationAssumptions = clusteredFinderLocationAssumptionsMeta.map((cluster) => {
+                        return cluster.map((meta) => {
+                            return meta[0];
+                        });
+                    }); // strip weights for drawing
                     let clusterDrawTarget = binarizedImage.value.copyImage();
                     clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, clusteredFinderLocationAssumptions[0], "blue");
                     clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, clusteredFinderLocationAssumptions[1], "red");
@@ -317,5 +328,8 @@ export default defineStore("decoding", () => {
         reProjectSideMin,
         reProjectSideMax,
         reProjectSide,
+        weightExpMin,
+        weightExpMax,
+        weightExp,
     };
 });

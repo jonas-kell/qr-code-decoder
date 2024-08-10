@@ -100,6 +100,13 @@
         <image-display-application :image-to-display="decodingStore.findersVImage as Image | null"></image-display-application>
         <image-display-application :image-to-display="decodingStore.findersLocations as Image | null"></image-display-application>
         <h3>Cluster/Cull-Finders</h3>
+        <slider-group
+            v-model="decodingStore.weightExp"
+            :min="decodingStore.weightExpMin"
+            :max="decodingStore.weightExpMax"
+            label="Weight exp"
+            :only-end="false"
+        ></slider-group>
         <image-display-application
             :image-to-display="decodingStore.clusteredFindersLocations as Image | null"
         ></image-display-application>

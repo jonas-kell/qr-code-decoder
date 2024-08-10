@@ -3,9 +3,17 @@ import { Image } from "./image";
 export type FinderLinesFinder = [number, [number, number]][];
 export type FinderCoordinate = [number, number];
 export type FinderCoordinates = FinderCoordinate[];
+export type FinderCoordinateMeta = [FinderCoordinate, number];
 
 const BLACK = 0;
 const WHITE = 255;
+
+function relSimPC(x: number, y: number): number {
+    return 100 - Math.abs(((x - y) / y) * 100);
+}
+function relSimPCSymm(x: number, y: number): number {
+    return 100 - Math.abs(((x - y) / (x + y)) * 50);
+}
 
 export function findersHorizontal(image: Image, threshold: number): FinderLinesFinder {
     const thresholdPotency = Math.pow(100 - threshold, 5);
@@ -18,9 +26,6 @@ export function findersHorizontal(image: Image, threshold: number): FinderLinesF
     const getPixelValue = (x: number, y: number): number => {
         const index = (y * width + x) * 4;
         return data[index] < 128 ? BLACK : WHITE; // Black or white
-    };
-    const compPC = (x: number, y: number): number => {
-        return Math.abs(((x - y) / y) * 100);
     };
 
     let res: FinderLinesFinder = [];
@@ -60,11 +65,11 @@ export function findersHorizontal(image: Image, threshold: number): FinderLinesF
             if (a > 0) {
                 const average_width = (a + b + c + d + e) / 7; // b1 + w1 + b3 + w1 + b1
 
-                const relA = 100 - compPC(a, average_width);
-                const relB = 100 - compPC(b, average_width);
-                const relC = 100 - compPC(c, average_width * 3);
-                const relD = 100 - compPC(d, average_width);
-                const relE = 100 - compPC(e, average_width);
+                const relA = relSimPC(a, average_width);
+                const relB = relSimPC(b, average_width);
+                const relC = relSimPC(c, average_width * 3);
+                const relD = relSimPC(d, average_width);
+                const relE = relSimPC(e, average_width);
 
                 const compositeFit = relA * relB * relC * relD * relE;
 
@@ -124,17 +129,46 @@ export function drawVerticalFinderLinesOnImage(image: Image, finderLines: Finder
 
 export function possibleFinderPoints(
     finderLinesHorizontal: FinderLinesFinder,
-    finderLinesVertical: FinderLinesFinder
-): FinderCoordinates {
-    let res: FinderCoordinates = [];
+    finderLinesVertical: FinderLinesFinder,
+    weightExp: number
+): FinderCoordinateMeta[] {
+    let coordsMeta: FinderCoordinateMeta[] = [];
     finderLinesHorizontal.forEach((finderLineHorizontal) => {
         finderLinesVertical.forEach((finderLineVertical) => {
             if (finderLineHorizontal[0] > finderLineVertical[1][0] && finderLineHorizontal[0] < finderLineVertical[1][1]) {
                 if (finderLineVertical[0] > finderLineHorizontal[1][0] && finderLineVertical[0] < finderLineHorizontal[1][1]) {
-                    res.push([finderLineVertical[0], finderLineHorizontal[0]]);
+                    // similar line length is higher weight
+                    let weight = relSimPCSymm(
+                        finderLineVertical[1][1] - finderLineVertical[1][0],
+                        finderLineHorizontal[1][1] - finderLineHorizontal[1][0]
+                    );
+
+                    // more central cutting is higher weight
+                    weight *=
+                        relSimPCSymm(
+                            finderLineVertical[1][1] - finderLineHorizontal[0],
+                            finderLineHorizontal[0] - finderLineVertical[1][0]
+                        ) *
+                        relSimPCSymm(
+                            finderLineHorizontal[1][1] - finderLineVertical[0],
+                            finderLineVertical[0] - finderLineHorizontal[1][0]
+                        );
+
+                    coordsMeta.push([[finderLineVertical[0], finderLineHorizontal[0]], weight]);
                 }
             }
         });
+    });
+
+    // the more points in close proximity, the more important the weight
+    let res = coordsMeta.map((meta: FinderCoordinateMeta) => {
+        let sum = 0;
+        coordsMeta.forEach((neighborMeta) => {
+            sum += 1 / (euclideanDistance(neighborMeta[0], meta[0]) + 1);
+        });
+
+        const newWeight = Math.pow(meta[1] * sum, weightExp);
+        return [meta[0], newWeight] as FinderCoordinateMeta;
     });
 
     return res;
@@ -175,23 +209,32 @@ function initializeCentroids(points: FinderCoordinates, k: number): FinderCoordi
 
 /**
  * Performs K-means clustering.
- * @param points - The data points to cluster.
+ * @param pointsMeta - The data points to cluster.
  * @param k - The number of clusters.
  * @param maxIterations - The maximum number of iterations.
  * @returns An array of clusters, each cluster being an array of FinderCoordinates.
  */
-export function kMeans(points: FinderCoordinates, k: number, maxIterations: number = 100): FinderCoordinates[] {
-    let centroids = initializeCentroids(points, k);
+export function weightedKMeans(
+    pointsMeta: FinderCoordinateMeta[],
+    k: number,
+    maxIterations: number = 100
+): FinderCoordinateMeta[][] {
+    let centroids = initializeCentroids(
+        pointsMeta.map((pointMeta) => {
+            return pointMeta[0];
+        }),
+        k
+    );
     let previousCentroids: FinderCoordinate[];
-    let clusters: FinderCoordinates[] = []; // is getting overridden in any case, but typescript does not get this.
+    let clusters: FinderCoordinateMeta[][] = []; // is getting overridden in any case, but typescript does not get this.
 
     for (let iteration = 0; iteration < maxIterations; iteration++) {
         // Assign points to the nearest centroid
         clusters = Array.from({ length: k }, () => []);
-        points.forEach((point) => {
-            const distances = centroids.map((centroid) => euclideanDistance(point, centroid));
+        pointsMeta.forEach((pointMeta) => {
+            const distances = centroids.map((centroid) => euclideanDistance(pointMeta[0], centroid));
             const nearestIndex = distances.indexOf(Math.min(...distances));
-            clusters[nearestIndex].push(point);
+            clusters[nearestIndex].push(pointMeta);
         });
 
         // Store the old centroids to check for convergence
@@ -201,7 +244,7 @@ export function kMeans(points: FinderCoordinates, k: number, maxIterations: numb
         centroids = centroids.map((_, index) => {
             const clusterPoints = clusters[index];
             if (clusterPoints.length === 0) return previousCentroids[index]; // Handle empty clusters
-            return averageCoordinate(clusterPoints);
+            return averageCoordinateWeighted(clusterPoints);
         });
 
         // Check for convergence (if centroids do not change)
@@ -215,11 +258,26 @@ export function kMeans(points: FinderCoordinates, k: number, maxIterations: numb
     return clusters;
 }
 
-export function averageCoordinate(points: FinderCoordinates): FinderCoordinate {
+function averageCoordinate(points: FinderCoordinates): FinderCoordinate {
     const x = points.reduce((sum, [x]) => sum + x, 0) / points.length;
     const y = points.reduce((sum, [, y]) => sum + y, 0) / points.length;
 
     return [x, y];
+}
+
+export function averageCoordinateWeighted(points: FinderCoordinateMeta[]): FinderCoordinate {
+    let cumWeight = 0;
+    let cumX = 0;
+    let cumY = 0;
+
+    points.forEach((meta) => {
+        const weight = meta[1];
+        cumWeight += weight;
+        cumX += meta[0][0] * weight;
+        cumY += meta[0][1] * weight;
+    });
+
+    return [cumX / cumWeight, cumY / cumWeight];
 }
 
 function orderThreeCentersCyclically(
