@@ -37,56 +37,46 @@ export function blur(image: Image, radius: number) {
  * @returns
  */
 export function applyAdaptiveGaussianThresholding(image: Image, blockSize: number, C: number): Image {
-    const copiedImage = image.copyImage();
-    const imageData: ImageData = image.getImageData();
-    const data = imageData.data;
-    const width = imageData.width;
-    const height = imageData.height;
     const halfBlockSize = Math.floor(blockSize / 2);
 
-    const binaryData = new Uint8ClampedArray(data.length);
+    const fragmentShaderSource = `
+        precision mediump float;
+        uniform sampler2D u_texture;
+        uniform vec2 u_resolution;
+        varying vec2 v_texcoord;
 
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            let sum = 0;
-            let sumSq = 0;
-            let count = 0;
+        void main() {
+            const int halfBlockSize = ${halfBlockSize};
 
-            for (let dy = -halfBlockSize; dy <= halfBlockSize; dy++) {
-                for (let dx = -halfBlockSize; dx <= halfBlockSize; dx++) {
-                    const nx = x + dx;
-                    const ny = y + dy;
-
-                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                        const index = (ny * width + nx) * 4;
-                        const pixelValue = data[index]; // Already grayscale assumed
-                        sum += pixelValue;
-                        sumSq += pixelValue * pixelValue;
-                        count++;
-                    }
+            float sum = 0.0;
+            float sumSq = 0.0;
+            float count = 0.0;
+            for (int dy = -halfBlockSize; dy <= halfBlockSize; dy++) {
+                for (int dx = -halfBlockSize; dx <= halfBlockSize; dx++) {
+                    vec2 offset = vec2(dx, dy) / u_resolution;
+                    float value = texture2D(u_texture, v_texcoord + offset).r; // assumes gray-scale image, so take red channel (...[0] also works)
+                    sum += value;
+                    sumSq += value * value;
+                    count++;
                 }
             }
 
-            const mean = sum / count;
-            const variance = sumSq / count - mean * mean;
-            const stdDev = Math.sqrt(variance);
+            float mean = sum / count;
+            float variance = sumSq / count - mean * mean;
+            float stdDev = sqrt(variance);
 
-            const threshold = mean - C * stdDev;
-            const index = (y * width + x) * 4;
-
-            // Binary thresholding
-            const pixelValue = data[index];
-            if (pixelValue > threshold) {
-                binaryData[index] = binaryData[index + 1] = binaryData[index + 2] = 255; // White
+            float threshold = mean - ${C.toFixed(3)} * stdDev;
+            float value = texture2D(u_texture, v_texcoord).r;
+            
+            if (value >= threshold) {
+                gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); // white
             } else {
-                binaryData[index] = binaryData[index + 1] = binaryData[index + 2] = 0; // Black
+                gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); // black
             }
-            binaryData[index + 3] = 255; // Alpha channel (fully opaque)
         }
-    }
+    `;
 
-    copiedImage.putImageData(new ImageData(binaryData, width, height), 0, 0);
-    return copiedImage;
+    return webGlShaderComputation(image, fragmentShaderSource);
 }
 
 function webGlShaderComputation(image: Image, fragmentShaderSource: string): Image {

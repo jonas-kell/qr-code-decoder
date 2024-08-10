@@ -44,7 +44,7 @@
             :min="decodingStore.resizedImageSizeMin"
             :max="decodingStore.resizedImageSizeMax"
             label="ReSize Target Size"
-            :only-end="true"
+            :only-end="false"
         ></slider-group>
         <image-display-application :image-to-display="decodingStore.resizedImage as Image | null"></image-display-application>
         <h3>Blurred</h3>
@@ -53,7 +53,7 @@
             :min="decodingStore.blurRadiusMin"
             :max="decodingStore.blurRadiusMax"
             label="Blur Radius"
-            :only-end="true"
+            :only-end="false"
         ></slider-group>
         <image-display-application :image-to-display="decodingStore.blurredImage as Image | null"></image-display-application>
         <h3>Binarized</h3>
@@ -62,14 +62,14 @@
             :min="decodingStore.binarizationNumCellsMin"
             :max="decodingStore.binarizationNumCellsMax"
             label="Binarization Number Cells"
-            :only-end="true"
+            :only-end="false"
         ></slider-group>
         <slider-group
             v-model="decodingStore.binarizationCNumber"
             :min="decodingStore.binarizationCNumberMin"
             :max="decodingStore.binarizationCNumberMax"
             label="Binarization C Number"
-            :only-end="true"
+            :only-end="false"
         ></slider-group>
         <image-display-application :image-to-display="decodingStore.binarizedImage as Image | null"></image-display-application>
         <h3>Finders</h3>
