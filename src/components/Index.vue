@@ -99,7 +99,7 @@
         <image-display-application :image-to-display="decodingStore.findersHImage as Image | null"></image-display-application>
         <image-display-application :image-to-display="decodingStore.findersVImage as Image | null"></image-display-application>
         <image-display-application :image-to-display="decodingStore.findersLocations as Image | null"></image-display-application>
-        <h3>Cluster/Cull-Finders</h3>
+        <h3>Cull/Cluster-Finders</h3>
         <slider-group
             v-model="decodingStore.weightExp"
             :min="decodingStore.weightExpMin"
@@ -107,6 +107,16 @@
             label="Weight exp"
             :only-end="false"
         ></slider-group>
+        <slider-group
+            v-model="decodingStore.cullHarshness"
+            :min="decodingStore.cullHarshnessMin"
+            :max="decodingStore.cullHarshnessMax"
+            label="Cull Harshness"
+            :only-end="false"
+        ></slider-group>
+        <image-display-application
+            :image-to-display="decodingStore.findersLocationsCulled as Image | null"
+        ></image-display-application>
         <image-display-application
             :image-to-display="decodingStore.clusteredFindersLocations as Image | null"
         ></image-display-application>

@@ -12,6 +12,7 @@ import {
     weightedKMeans,
     possibleFinderPoints,
     averageCoordinateWeighted,
+    cullOutliers,
 } from "../functions/processing";
 
 export default defineStore("decoding", () => {
@@ -151,6 +152,7 @@ export default defineStore("decoding", () => {
     const findersHImage = ref<Image | null>(null);
     const findersVImage = ref<Image | null>(null);
     const findersLocations = ref<Image | null>(null);
+    const findersLocationsCulled = ref<Image | null>(null);
     const clusteredFindersLocations = ref<Image | null>(null);
     const findersThresholdMin = ref<number>(5);
     const findersThresholdMax = ref<number>(90);
@@ -158,8 +160,11 @@ export default defineStore("decoding", () => {
     const weightExpMin = ref<number>(1);
     const weightExpMax = ref<number>(10);
     const weightExp = ref<number>(5);
+    const cullHarshnessMin = ref<number>(1);
+    const cullHarshnessMax = ref<number>(100);
+    const cullHarshness = ref<number>(35);
     const edgePoints = ref<[FinderCoordinate, FinderCoordinate, FinderCoordinate, FinderCoordinate] | null>(null);
-    watch([binarizedImage, findersThreshold, weightExp], () => {
+    watch([binarizedImage, findersThreshold, weightExp, cullHarshness], () => {
         nextTick(() => {
             if (binarizedImage.value != null) {
                 startTiming("search Finders");
@@ -187,10 +192,28 @@ export default defineStore("decoding", () => {
                 endTiming("draw Finders");
 
                 if (finderLocationAssumptions.length >= 3) {
+                    startTiming("outlier Culling");
+
+                    const culledFinderLocationAssumptionsMeta = cullOutliers(finderLocationAssumptionsMeta, cullHarshness.value);
+                    const culledFinderLocationAssumptions = culledFinderLocationAssumptionsMeta.map((assumption) => {
+                        return assumption[0];
+                    });
+                    endTiming("outlier Culling");
+
+                    startTiming("draw Culled Finders");
+
+                    findersLocationsCulled.value = drawFinderPointsOnImage(
+                        binarizedImage.value as Image,
+                        culledFinderLocationAssumptions,
+                        "blue"
+                    );
+
+                    endTiming("draw Culled Finders");
+
                     startTiming("clustering");
 
                     const clusteredFinderLocationAssumptionsMeta = weightedKMeans(
-                        finderLocationAssumptionsMeta,
+                        culledFinderLocationAssumptionsMeta,
                         3,
                         Math.floor(finderLocationAssumptions.length * 4)
                     );
@@ -303,6 +326,7 @@ export default defineStore("decoding", () => {
         findersHImage,
         findersVImage,
         findersLocations,
+        findersLocationsCulled,
         clusteredFindersLocations,
         reProjected,
 
@@ -331,5 +355,8 @@ export default defineStore("decoding", () => {
         weightExpMin,
         weightExpMax,
         weightExp,
+        cullHarshnessMin,
+        cullHarshnessMax,
+        cullHarshness,
     };
 });

@@ -174,6 +174,25 @@ export function possibleFinderPoints(
     return res;
 }
 
+export function cullOutliers(coordinateMeta: FinderCoordinateMeta[], harshness: number): FinderCoordinateMeta[] {
+    const averageWeight =
+        coordinateMeta.reduce((acc: number, a) => {
+            return acc + a[1];
+        }, 0) / coordinateMeta.length;
+    const variance =
+        coordinateMeta.reduce((acc: number, a: [any, number]) => {
+            const diff = a[1] - averageWeight;
+            return acc + diff * diff;
+        }, 0) / coordinateMeta.length;
+    const standardDeviation = Math.sqrt(variance);
+
+    const threshold = averageWeight - ((100 - harshness) / 100) * standardDeviation;
+
+    return coordinateMeta.filter((meta) => {
+        return !(meta[1] < threshold);
+    });
+}
+
 export function drawFinderPointsOnImage(image: Image, coordinates: FinderCoordinates, color: string, size = 5): Image {
     const copyImageToDrawOn = image.copyImage();
 
