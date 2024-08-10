@@ -158,7 +158,8 @@ export function drawFinderPointsOnImage(image: Image, coordinates: FinderCoordin
  * @returns The Euclidean distance.
  */
 function euclideanDistance(point1: FinderCoordinate, point2: FinderCoordinate): number {
-    return Math.sqrt(Math.pow(point1[0] - point2[0], 2) + Math.pow(point1[1] - point2[1], 2));
+    // do not take square root for more performance
+    return (point1[0] - point2[0]) * (point1[0] - point2[0]) + (point1[1] - point2[1]) * (point1[1] - point2[1]);
 }
 
 /**
