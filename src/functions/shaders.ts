@@ -35,20 +35,19 @@ export function blur(image: Image, radius: number) {
         varying vec2 v_texcoord;
 
         void main() {
+            const int radius = ${radius};
+
             vec4 color = vec4(0.0);
             float total = 0.0;
-            
-            const int radius = ${radius};
-            
             for (int y = -radius; y <= radius; y++) {
                 for (int x = -radius; x <= radius; x++) {
                     vec2 offset = vec2(x, y) / u_resolution;
-                    color += texture2D(u_texture, v_texcoord + offset) * (1.0 / float(radius * radius));
+                    color += texture2D(u_texture, v_texcoord + offset);
                     total += 1.0;
                 }
             }
             
-            gl_FragColor = color;
+            gl_FragColor = color * (1.0 / total);
         }
     `;
 
