@@ -111,5 +111,6 @@
     h2,
     h3 {
         text-align: center;
+        padding-top: 2em;
     }
 </style>

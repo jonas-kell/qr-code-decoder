@@ -25,7 +25,7 @@
 <template>
     <div>
         <v-row justify="center" v-if="hasImage">
-            <v-row class="v-col-12 v-col-xl-4 v-col-lg-6 v-col-md-8 v-col-sm-10 mt-3">
+            <v-row class="v-col-12 v-col-xl-4 v-col-lg-6 v-col-md-8 v-col-sm-10">
                 <img :src="imageURL ?? ''" class="v-col-12" />
             </v-row>
         </v-row>
