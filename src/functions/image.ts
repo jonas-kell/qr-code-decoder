@@ -14,8 +14,8 @@ export class Image {
         this.ctx = ctxBuf;
     }
 
-    public blur(radius: number): Image {
-        return blur(this, radius);
+    public async blur(radius: number): Promise<Image> {
+        return await blur(this, radius);
     }
 
     public grayScale(): Image {

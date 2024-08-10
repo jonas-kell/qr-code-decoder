@@ -1,47 +1,170 @@
 import { Image } from "./image";
 
-export function blur(image: Image, radius: number): Image {
-    const copiedImage = image.copyImage();
-    const imageData: ImageData = image.getImageData();
-    const data = imageData.data;
-    const width = imageData.width;
-    const height = imageData.height;
-    const blurredData = new Uint8ClampedArray(data);
+export async function blur(image: Image, radius: number) {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl");
+    if (!gl) {
+        throw Error("No webgl context");
+    }
+    const width = image.getWidth();
+    const height = image.getHeight();
 
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            let r = 0,
-                g = 0,
-                b = 0,
-                a = 0;
-            let count = 0;
+    canvas.width = width;
+    canvas.height = height;
 
-            for (let dy = -radius; dy <= radius; dy++) {
-                for (let dx = -radius; dx <= radius; dx++) {
-                    const nx = x + dx;
-                    const ny = y + dy;
+    // Vertex Shader Source
+    const vertexShaderSource = `
+        attribute vec2 a_position;
+        attribute vec2 a_texcoord;
+        varying vec2 v_texcoord;
+        
+        void main() {
+            gl_Position = vec4(a_position, 0.0, 1.0);
+            v_texcoord = a_texcoord;
+        }
+    `;
 
-                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                        const index = (ny * width + nx) * 4;
-                        r += data[index];
-                        g += data[index + 1];
-                        b += data[index + 2];
-                        a += data[index + 3];
-                        count++;
-                    }
+    // Fragment Shader Source
+    const fragmentShaderSource = `
+        precision mediump float;
+        uniform sampler2D u_texture;
+        uniform vec2 u_resolution;
+        varying vec2 v_texcoord;
+
+        void main() {
+            vec4 color = vec4(0.0);
+            float total = 0.0;
+            
+            float radius = ${radius}.0; // Ensure radius is a float
+            
+            for (float y = -radius; y <= radius; y++) {
+                for (float x = -radius; x <= radius; x++) {
+                    vec2 offset = vec2(x, y) / u_resolution;
+                    color += texture2D(u_texture, v_texcoord + offset) * (1.0 / (radius * radius));
+                    total += 1.0;
                 }
             }
-
-            const i = (y * width + x) * 4;
-            blurredData[i] = r / count;
-            blurredData[i + 1] = g / count;
-            blurredData[i + 2] = b / count;
-            blurredData[i + 3] = a / count;
+            
+            gl_FragColor = color;
         }
+    `;
+
+    function compileShader(gl: WebGLRenderingContext, source: string, type: number) {
+        const shader = gl.createShader(type);
+        if (!shader) {
+            throw Error("Shader could not be created");
+        }
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            const errorlog = gl.getShaderInfoLog(shader);
+            gl.deleteShader(shader);
+            throw Error(`Shader compilation error: ${errorlog}`);
+        }
+        return shader;
     }
 
-    copiedImage.putImageData(new ImageData(blurredData, width, height), 0, 0);
-    return copiedImage;
+    function createProgram(gl: WebGLRenderingContext, vertexSource: string, fragmentSource: string) {
+        const vertexShader = compileShader(gl, vertexSource, gl.VERTEX_SHADER);
+        const fragmentShader = compileShader(gl, fragmentSource, gl.FRAGMENT_SHADER);
+        const program = gl.createProgram();
+        if (!program) {
+            throw Error("Program could not be created");
+        }
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            const errorlog = gl.getProgramInfoLog(program);
+            gl.deleteProgram(program);
+            throw Error(`Program link error: ${errorlog}`);
+        }
+        return program;
+    }
+
+    function createTexture(gl: WebGLRenderingContext, image: TexImageSource) {
+        const texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        return texture;
+    }
+
+    function createFramebuffer(gl: WebGLRenderingContext) {
+        const framebuffer = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+        const texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+        return framebuffer;
+    }
+
+    function loadImage(url: string): Promise<HTMLImageElement> {
+        return new Promise((resolve: Function, reject: Function) => {
+            let image: HTMLImageElement = new window.Image();
+
+            image.onload = () => {
+                resolve(image);
+            };
+            image.onerror = (error) => {
+                reject(error);
+            };
+            image.src = url;
+        });
+    }
+
+    // Set up shaders and program
+    const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+    gl.useProgram(program);
+
+    // Set up vertices and texture coordinates
+    const vertices = new Float32Array([-1, -1, 0, 0, 1, -1, 1, 0, -1, 1, 0, 1, 1, 1, 1, 1]);
+
+    const positionLocation = gl.getAttribLocation(program, "a_position");
+    const texcoordLocation = gl.getAttribLocation(program, "a_texcoord");
+    const resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+    const textureLocation = gl.getUniformLocation(program, "u_texture");
+
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 16, 0);
+
+    gl.enableVertexAttribArray(texcoordLocation);
+    gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 16, 8);
+
+    // Create texture and framebuffer
+    const texture = createTexture(gl, await loadImage(image.generateDataURL()));
+    const framebuffer = createFramebuffer(gl);
+
+    // Render to framebuffer
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.viewport(0, 0, width, height);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.uniform2f(resolutionLocation, width, height);
+    gl.uniform1i(textureLocation, 0);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // Read pixels from framebuffer
+    const blurredImageData = new Uint8ClampedArray(width * height * 4);
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, blurredImageData);
+
+    const blurredImage = image.copyImage();
+
+    blurredImage.putImageData(new ImageData(blurredImageData, width, height), 0, 0);
+
+    return blurredImage;
 }
 
 /**
