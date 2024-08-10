@@ -2,7 +2,7 @@ import { Image } from "./image";
 
 export function blur(image: Image, radius: number): Image {
     const copiedImage = image.copyImage();
-    const imageData = image.getImageData();
+    const imageData: ImageData = image.getImageData();
     const data = imageData.data;
     const width = imageData.width;
     const height = imageData.height;
@@ -51,7 +51,7 @@ export function blur(image: Image, radius: number): Image {
  */
 export function applyAdaptiveGaussianThresholding(image: Image, blockSize: number, C: number): Image {
     const copiedImage = image.copyImage();
-    const imageData = copiedImage.getImageData();
+    const imageData: ImageData = image.getImageData();
     const data = imageData.data;
     const width = imageData.width;
     const height = imageData.height;
