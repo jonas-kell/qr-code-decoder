@@ -30,6 +30,10 @@
             QR Code Decoder
         </h1>
 
+        <div style="text-align: center">
+            <router-link to="generate">Generate</router-link> a Code (e.g. on Smartphone for scanning)
+        </div>
+
         <photo-application :take-photo="testTrigger" @frame-taken="handleTakenFrame"></photo-application>
 
         <h3>Grayscaled</h3>

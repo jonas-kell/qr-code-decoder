@@ -13,6 +13,10 @@
         <v-row justify="center">
             <qrcode-vue :value="value" :size="size" level="H" id="qr" />
         </v-row>
+
+        <div style="text-align: center; margin-top: 2cm">
+            <router-link to="/">Home</router-link>
+        </div>
     </div>
 </template>
 
