@@ -1,5 +1,7 @@
 import { Image } from "./image";
 
+// https://thebookofshaders.com/edit.php
+
 export async function blur(image: Image, radius: number) {
     const canvas = document.createElement("canvas");
     const gl = canvas.getContext("webgl");
@@ -35,12 +37,12 @@ export async function blur(image: Image, radius: number) {
             vec4 color = vec4(0.0);
             float total = 0.0;
             
-            float radius = ${radius}.0; // Ensure radius is a float
+            const int radius = ${radius};
             
-            for (float y = -radius; y <= radius; y++) {
-                for (float x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int x = -radius; x <= radius; x++) {
                     vec2 offset = vec2(x, y) / u_resolution;
-                    color += texture2D(u_texture, v_texcoord + offset) * (1.0 / (radius * radius));
+                    color += texture2D(u_texture, v_texcoord + offset) * (1.0 / float(radius * radius));
                     total += 1.0;
                 }
             }
