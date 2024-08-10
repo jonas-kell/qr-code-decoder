@@ -103,11 +103,11 @@ export default defineStore("decoding", () => {
     const blurRadiusMax = ref<number>(10);
     const blurRadius = ref<number>(1);
     watch([resizedImage, blurRadius], () => {
-        nextTick(async () => {
+        nextTick(() => {
             if (resizedImage.value != null) {
                 startTiming("blur");
 
-                blurredImage.value = await resizedImage.value.blur(blurRadius.value);
+                blurredImage.value = resizedImage.value.blur(blurRadius.value);
 
                 endTiming("blur");
             }

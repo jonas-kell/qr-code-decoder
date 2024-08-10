@@ -1,8 +1,9 @@
 import { Image } from "./image";
 
 // https://thebookofshaders.com/edit.php
+// https://glsl.app/
 
-export async function blur(image: Image, radius: number) {
+export function blur(image: Image, radius: number) {
     const canvas = document.createElement("canvas");
     const gl = canvas.getContext("webgl");
     if (!gl) {
@@ -47,7 +48,7 @@ export async function blur(image: Image, radius: number) {
                 }
             }
             
-            gl_FragColor = color;
+            gl_FragColor = texture2D(u_texture, v_texcoord);
         }
     `;
 
@@ -84,10 +85,10 @@ export async function blur(image: Image, radius: number) {
         return program;
     }
 
-    function createTexture(gl: WebGLRenderingContext, image: TexImageSource) {
+    function createTexture(gl: WebGLRenderingContext, width: number, height: number, data: Uint8Array) {
         const texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         return texture;
@@ -103,20 +104,6 @@ export async function blur(image: Image, radius: number) {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
         return framebuffer;
-    }
-
-    function loadImage(url: string): Promise<HTMLImageElement> {
-        return new Promise((resolve: Function, reject: Function) => {
-            let image: HTMLImageElement = new window.Image();
-
-            image.onload = () => {
-                resolve(image);
-            };
-            image.onerror = (error) => {
-                reject(error);
-            };
-            image.src = url;
-        });
     }
 
     // Set up shaders and program
@@ -142,7 +129,8 @@ export async function blur(image: Image, radius: number) {
     gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 16, 8);
 
     // Create texture and framebuffer
-    const texture = createTexture(gl, await loadImage(image.generateDataURL()));
+    const data = image.getImageData();
+    const texture = createTexture(gl, data.width, data.height, new Uint8Array(data.data));
     const framebuffer = createFramebuffer(gl);
 
     // Render to framebuffer
