@@ -67,12 +67,15 @@ export default defineStore("decoding", () => {
     });
 
     const resizedImage = ref<Image | null>(null);
-    watch(grayscaleImage, () => {
+    const resizedImageSizeMin = ref<number>(50);
+    const resizedImageSizeMax = ref<number>(600);
+    const resizedImageSize = ref<number>(400);
+    watch([grayscaleImage, resizedImageSize], () => {
         nextTick(() => {
             if (grayscaleImage.value != null) {
                 startTiming("resize");
 
-                const target_larger = 400; // todo decide size
+                const target_larger = resizedImageSize.value;
                 let target_width: number;
                 let target_height: number;
 
@@ -96,12 +99,15 @@ export default defineStore("decoding", () => {
     });
 
     const blurredImage = ref<Image | null>(null);
-    watch(resizedImage, () => {
+    const blurRadiusMin = ref<number>(0);
+    const blurRadiusMax = ref<number>(10);
+    const blurRadius = ref<number>(1);
+    watch([resizedImage, blurRadius], () => {
         nextTick(() => {
             if (resizedImage.value != null) {
                 startTiming("blur");
 
-                blurredImage.value = resizedImage.value.blur(1); // todo decide the blur radius
+                blurredImage.value = resizedImage.value.blur(blurRadius.value);
 
                 endTiming("blur");
             }
@@ -109,14 +115,16 @@ export default defineStore("decoding", () => {
     });
 
     const binarizedImage = ref<Image | null>(null);
-    watch(blurredImage, () => {
+    const binarizationNumCellsMin = ref<number>(2);
+    const binarizationNumCellsMax = ref<number>(15);
+    const binarizationNumCells = ref<number>(5);
+    watch([blurredImage, binarizationNumCells], () => {
         nextTick(() => {
             if (blurredImage.value != null) {
                 startTiming("threshold");
 
-                const num_cells = 5; // todo decide parameters
                 let approxBlockSize = Math.round(
-                    (blurredImage.value.getWidth() + blurredImage.value.getHeight()) / 2 / num_cells
+                    (blurredImage.value.getWidth() + blurredImage.value.getHeight()) / 2 / binarizationNumCells.value
                 );
                 if (approxBlockSize % 2 == 0) {
                     approxBlockSize += 1;
@@ -132,14 +140,17 @@ export default defineStore("decoding", () => {
     const findersVImage = ref<Image | null>(null);
     const findersLocations = ref<Image | null>(null);
     const clusteredFindersLocations = ref<Image | null>(null);
+    const findersThresholdMin = ref<number>(5);
+    const findersThresholdMax = ref<number>(90);
+    const findersThreshold = ref<number>(25);
     const edgePoints = ref<[FinderCoordinate, FinderCoordinate, FinderCoordinate, FinderCoordinate] | null>(null);
-    watch(binarizedImage, () => {
+    watch([binarizedImage, findersThreshold], () => {
         nextTick(() => {
             if (binarizedImage.value != null) {
                 // TODO set th in % (can be larger, because needs also vertical intersection)
                 startTiming("search Finders");
 
-                const threshold = 25;
+                const threshold = findersThreshold.value;
                 const findersH = findersHorizontal(binarizedImage.value as Image, threshold);
                 const findersV = findersVertical(binarizedImage.value as Image, threshold);
                 const finderLocationAssumptions = possibleFinderPoints(findersH, findersV);
@@ -206,13 +217,19 @@ export default defineStore("decoding", () => {
     });
 
     const reProjected = ref<Image | null>(null);
-    watch(clusteredFindersLocations, () => {
+    const reProjectOffsetMin = ref<number>(5);
+    const reProjectOffsetMax = ref<number>(100);
+    const reProjectOffset = ref<number>(30);
+    const reProjectSideMin = ref<number>(50);
+    const reProjectSideMax = ref<number>(250);
+    const reProjectSide = ref<number>(150);
+    watch([clusteredFindersLocations, reProjectOffset, reProjectSide], () => {
         nextTick(async () => {
             if (clusteredFindersLocations.value != null && edgePoints.value != null && binarizedImage.value != null) {
                 startTiming("reprojection");
 
-                const offset = 30;
-                const side = 150;
+                const offset = reProjectOffset.value;
+                const side = reProjectSide.value;
 
                 reProjected.value = await binarizedImage.value.applyPerspectiveTransformation(
                     side + 2 * offset,
@@ -252,6 +269,8 @@ export default defineStore("decoding", () => {
     return {
         calculatedTimings,
         start,
+
+        // images
         inputImage,
         grayscaleImage,
         resizedImage,
@@ -262,5 +281,25 @@ export default defineStore("decoding", () => {
         findersLocations,
         clusteredFindersLocations,
         reProjected,
+
+        // settings
+        resizedImageSizeMin,
+        resizedImageSizeMax,
+        resizedImageSize,
+        blurRadiusMin,
+        blurRadiusMax,
+        blurRadius,
+        binarizationNumCellsMin,
+        binarizationNumCellsMax,
+        binarizationNumCells,
+        findersThresholdMin,
+        findersThresholdMax,
+        findersThreshold,
+        reProjectOffsetMin,
+        reProjectOffsetMax,
+        reProjectOffset,
+        reProjectSideMin,
+        reProjectSideMax,
+        reProjectSide,
     };
 });
