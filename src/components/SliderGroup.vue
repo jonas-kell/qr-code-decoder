@@ -9,9 +9,11 @@
             max: number;
             onlyEnd?: boolean;
             label: string;
+            scalePower?: number;
         }>(),
         {
             onlyEnd: false,
+            scalePower: 0,
         }
     );
     const emit = defineEmits<{
@@ -30,9 +32,13 @@
 
     watch(localValue, () => {
         if (!props.onlyEnd) {
-            emit("update:modelValue", localValue.value);
+            emitResult(localValue.value);
         }
     });
+
+    function emitResult(val: number) {
+        emit("update:modelValue", val);
+    }
 </script>
 
 <template>
@@ -40,15 +46,15 @@
         <div class="text-caption">{{ label }}</div>
         <v-slider
             v-model="localValue"
-            :min="props.min"
-            :max="props.max"
+            :min="props.min * Math.pow(10, props.scalePower)"
+            :max="props.max * Math.pow(10, props.scalePower)"
             :hide-details="true"
             thumb-label
-            step="1"
+            :step="1 * Math.pow(10, props.scalePower)"
             @end="
                 (newVal) => {
                     if (onlyEnd) {
-                        emit('update:modelValue', newVal);
+                        emitResult(newVal);
                     }
                 }
             "

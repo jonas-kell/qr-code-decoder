@@ -28,7 +28,7 @@ export function blur(image: Image, radius: number) {
         }
     `;
 
-    return webGlShaderComputation(image, fragmentShaderSource);
+    return webGlShaderComputation2d(image, fragmentShaderSource);
 }
 
 /**
@@ -76,22 +76,36 @@ export function applyAdaptiveGaussianThresholding(image: Image, blockSize: numbe
         }
     `;
 
-    return webGlShaderComputation(image, fragmentShaderSource);
+    return webGlShaderComputation2d(image, fragmentShaderSource);
 }
 
-function webGlShaderComputation(image: Image, fragmentShaderSource: string): Image {
-    const canvas = document.createElement("canvas");
-    const gl = canvas.getContext("webgl");
-    if (!gl) {
-        throw Error("No webgl context");
-    }
-    const width = image.getWidth();
-    const height = image.getHeight();
+export function cameraProjection(image: Image, xOffset: number, yOffset: number): Image {
+    const vertexShaderSource = `
+        attribute vec2 a_position;
+        attribute vec2 a_texcoord;
+        varying vec2 v_texcoord;
+        
+        void main() {
+            gl_Position = vec4(a_position[0] + ${xOffset.toFixed(3)}, a_position[1] + ${yOffset.toFixed(3)}, 0.0, 1.0);
+            v_texcoord = a_texcoord;
+        }
+    `;
 
-    canvas.width = width;
-    canvas.height = height;
+    const fragmentShaderSource = `
+        precision mediump float;
+        uniform sampler2D u_texture;
+        uniform vec2 u_resolution;
+        varying vec2 v_texcoord;
 
-    // Vertex Shader Source
+        void main() {
+            gl_FragColor = texture2D(u_texture, v_texcoord);
+        }
+    `;
+
+    return webGlShaderComputation(image, vertexShaderSource, fragmentShaderSource);
+}
+
+function webGlShaderComputation2d(image: Image, fragmentShaderSource: string): Image {
     const vertexShaderSource = `
         attribute vec2 a_position;
         attribute vec2 a_texcoord;
@@ -102,6 +116,21 @@ function webGlShaderComputation(image: Image, fragmentShaderSource: string): Ima
             v_texcoord = a_texcoord;
         }
     `;
+
+    return webGlShaderComputation(image, vertexShaderSource, fragmentShaderSource);
+}
+
+function webGlShaderComputation(image: Image, vertexShaderSource: string, fragmentShaderSource: string): Image {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl");
+    if (!gl) {
+        throw Error("No webgl context");
+    }
+    const width = image.getWidth();
+    const height = image.getHeight();
+
+    canvas.width = width;
+    canvas.height = height;
 
     function compileShader(gl: WebGLRenderingContext, source: string, type: number) {
         const shader = gl.createShader(type);
