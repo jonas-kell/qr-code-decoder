@@ -6,11 +6,14 @@
     import { Image } from "../functions/image";
     import SliderGroup from "./SliderGroup.vue";
     import { cameraProjection } from "../functions/shaders";
+    import { useRouter } from "vue-router";
+
+    const router = useRouter();
 
     const value = ref("https://example.com");
     const size = ref(400);
 
-    const project = ref(true);
+    const projection = ref(true);
     const projectionTarget = ref<Image | null>(null);
 
     const focusLength = ref(2);
@@ -21,7 +24,7 @@
     const yRotation = ref(0);
     const zRotation = ref(0);
 
-    watch([xOffset, yOffset, zOffset, xRotation, yRotation, zRotation, focusLength, project], async () => {
+    watch([xOffset, yOffset, zOffset, xRotation, yRotation, zRotation, focusLength, projection], async () => {
         await doCameraProjection();
     });
     watch([value], () => {
@@ -53,12 +56,20 @@
     onMounted(() => {
         doCameraProjection();
     });
+
+    const tabTransferKey = "analyzeTabImageTransferKey";
+    function triggerAnalyzation() {
+        if (projectionTarget.value) {
+            sessionStorage.setItem(tabTransferKey, projectionTarget.value.generateDataURL());
+            router.push("/");
+        }
+    }
 </script>
 
 <template>
     <div class="container">
         <v-text-field v-model="value"></v-text-field>
-        <v-row v-if="project">
+        <v-row v-if="projection">
             <slider-group
                 label="focus"
                 :min="10"
@@ -120,20 +131,24 @@
             justify="center"
             class="mt-6"
             :style="{
-                display: project ? 'none' : undefined,
+                display: projection ? 'none' : undefined,
             }"
         >
             <qrcode-vue :value="value" :size="size" level="H" id="qr" />
         </v-row>
         <image-display-application
-            v-if="project"
+            v-if="projection"
             :image-to-display="projectionTarget as Image | null"
             style="text-align: center; margin-top: 2cm; margin-left: 2em; margin-right: 2em"
         ></image-display-application>
 
+        <v-row v-if="projection" justify="center" class="mt-6">
+            <v-btn @click="triggerAnalyzation">-> Analyze</v-btn>
+        </v-row>
+
         <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-top: 2cm">
             <span><router-link to="/">Home</router-link></span>
-            <v-checkbox label="Projection" :hide-details="true" v-model="project"></v-checkbox>
+            <v-checkbox label="Projection" :hide-details="true" v-model="projection"></v-checkbox>
         </div>
     </div>
 </template>

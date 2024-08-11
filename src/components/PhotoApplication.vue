@@ -159,8 +159,25 @@
         emit("frameTaken", image);
     }
 
+    const tabTransferKey = "analyzeTabImageTransferKey";
+    async function getFromAnalyzationCache() {
+        const url = sessionStorage.getItem(tabTransferKey);
+
+        if (url) {
+            // found something
+            sessionStorage.removeItem(tabTransferKey);
+
+            console.log("Picture taken from analyzation storage");
+            const image = await Image.generateImage(url);
+
+            heldImageUrl.value = url;
+            emit("frameTaken", image);
+        }
+    }
+
     onMounted(() => {
         initCamera();
+        getFromAnalyzationCache();
     });
     onUnmounted(() => {
         if (stream) {
