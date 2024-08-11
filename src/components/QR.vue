@@ -93,16 +93,16 @@
             ></slider-group>
             <slider-group
                 label="rotation x"
-                :min="-180"
-                :max="180"
+                :min="-90"
+                :max="90"
                 v-model="xRotation"
                 :scale-power="0"
                 :only-end="false"
             ></slider-group>
             <slider-group
                 label="rotation y"
-                :min="-180"
-                :max="180"
+                :min="-90"
+                :max="90"
                 v-model="yRotation"
                 :scale-power="0"
                 :only-end="false"
