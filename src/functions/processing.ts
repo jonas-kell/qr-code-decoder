@@ -384,6 +384,7 @@ function orderThreeCentersCyclically(
 }
 
 // https://calibdb.net/
+// https://monman53.github.io/2dfft/
 
 export function calculateFourthCenterSquare(
     coord1: FinderCoordinate,
