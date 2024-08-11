@@ -138,7 +138,7 @@ export function cameraProjection(
             );
             vec4 rendered = perspectiveMatrix * translated;
 
-            gl_Position = rendered / rendered[3]; // normalize
+            gl_Position = rendered; // normalization will be done automatically
             v_texcoord = a_texcoord;
         }
     `;
