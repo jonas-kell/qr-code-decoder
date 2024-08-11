@@ -445,35 +445,63 @@ export function calculateFourthCenterSquare(
     const F4 = D2 * E3 * E3 + 2 * D3 * E1 * E3 + 2 * D4 * E2 * E4 + 2 * D6 * E1 * E3 - D5 * E1 * E4 - D5 * E2 * E3;
     const F5 = D3 * E3 * E3 + D4 * E4 * E4 + D6 * E3 * E3 - D5 * E3 * E4;
 
-    console.log(F1, F2, F3, F4, F5);
-    // const xSolutions = [0.6, 1.0469];
     const xSolutions = newtonMethodRange([F1, F2, F3, F4, F5], -5, 5, 100, 1e-9, 0, 100);
-    console.log(xSolutions);
 
-    const za = xSolutions[0];
-    const zc = -(za * E2 + E4) / (za * E1 + E3);
-
-    const xa = (za * (XA * f)) / w;
-    const ya = (za * (YA * f)) / h;
-    const xb = (zb * (XB * f)) / w;
-    const yb = (zb * (YB * f)) / h;
-    const xc = (zc * (XC * f)) / w;
-    const yc = (zc * (YC * f)) / h;
-
-    const xd = xc + xa - xb;
-    const yd = yc + ya - yb;
-    const zd = zc + za - zb;
-
-    const XD = (xd * w) / (zd * f);
-    const YD = (yd * h) / (zd * f);
+    console.log(F1, F2, F3, F4, F5);
 
     // calculate the fourth point "naively"
-    // const x = reorderedA[0] + reorderedC[0] - reorderedB[0];
-    // const y = reorderedA[1] + reorderedC[1] - reorderedB[1];
-    // [x, y],
+    const naiveX = reorderedA[0] + reorderedC[0] - reorderedB[0];
+    const naiveY = reorderedA[1] + reorderedC[1] - reorderedB[1];
+
+    let resX = null as null | number;
+    let resY = null as null | number;
+    if (xSolutions.length == 0) {
+        resX = naiveX;
+        resY = naiveY;
+        console.log("No solutions to perspective calculation, took naive");
+    } else {
+        let tookIndex = -1;
+        xSolutions.forEach((solution, index) => {
+            const za = solution;
+            const zc = -(za * E2 + E4) / (za * E1 + E3);
+
+            const xa = (za * (XA * f)) / w;
+            const ya = (za * (YA * f)) / h;
+            const xb = (zb * (XB * f)) / w;
+            const yb = (zb * (YB * f)) / h;
+            const xc = (zc * (XC * f)) / w;
+            const yc = (zc * (YC * f)) / h;
+
+            const xd = xc + xa - xb;
+            const yd = yc + ya - yb;
+            const zd = zc + za - zb;
+
+            const XD = (xd * w) / (zd * f);
+            const YD = (yd * h) / (zd * f);
+
+            const XDretransformed = XD + w;
+            const YDretransformed = YD + h;
+
+            if (resX != null && resY != null) {
+                if (
+                    euclideanDistance([naiveX, naiveY], [XDretransformed, YDretransformed]) <
+                    euclideanDistance([naiveX, naiveY], [resX, resY])
+                ) {
+                    resX = XDretransformed;
+                    resY = YDretransformed;
+                    tookIndex = index;
+                }
+            } else {
+                resX = XDretransformed;
+                resY = YDretransformed;
+                tookIndex = index;
+            }
+        });
+        console.log("solutions were", xSolutions, "took", tookIndex);
+    }
 
     return [
-        [XD + w, YD + h],
+        [resX as number, resY as number], // they get set in any case !!!
         [reorderedA, reorderedB, reorderedC],
     ];
 }
