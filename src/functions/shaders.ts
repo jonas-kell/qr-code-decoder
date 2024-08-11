@@ -96,13 +96,13 @@ export function cameraProjection(
         #define pi 3.1415926535897932384626433832795
 
         void main() {
-            vec4 pos = vec4(a_position, 1.0, 1.0);
+            vec4 pos = vec4(a_position, 0.0, 1.0);
     
             const float f = ${focusLength.toFixed(3)}; // TODO doesn't do anything currently
             const mat4 translationMatrix = mat4(
                 1.0, 0.0, 0.0, ${xOffset.toFixed(3)},
                 0.0, 1.0, 0.0, ${yOffset.toFixed(3)},
-                0.0, 0.0, 1.0, ${zOffset.toFixed(3)},
+                0.0, 0.0, 1.0, ${zOffset.toFixed(3)} + 1.5, // move away by default
                 0.0, 0.0, 0.0, 1.0
             );
             const mat4 rotationMatrixX = mat4(
