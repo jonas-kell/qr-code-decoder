@@ -13,10 +13,15 @@
     const project = ref(true);
     const projectionTarget = ref<Image | null>(null);
 
+    const focusLength = ref(2);
     const xOffset = ref(0);
     const yOffset = ref(0);
+    const zOffset = ref(0);
+    const xRotation = ref(0);
+    const yRotation = ref(0);
+    const zRotation = ref(0);
 
-    watch([xOffset, yOffset, project], async () => {
+    watch([xOffset, yOffset, zOffset, xRotation, yRotation, zRotation, focusLength, project], async () => {
         setTimeout(async () => {
             await doCameraProjection();
         }, 100);
@@ -31,7 +36,16 @@
 
         const imageFromQrGenerator = await Image.generateImage(url);
 
-        const projected = cameraProjection(imageFromQrGenerator, xOffset.value, yOffset.value);
+        const projected = cameraProjection(
+            imageFromQrGenerator,
+            focusLength.value,
+            xOffset.value,
+            yOffset.value,
+            zOffset.value,
+            xRotation.value,
+            yRotation.value,
+            zRotation.value
+        );
 
         projectionTarget.value = projected;
     }
@@ -46,6 +60,14 @@
         <v-text-field v-model="value"></v-text-field>
         <v-row v-if="project">
             <slider-group
+                label="focus"
+                :min="10"
+                :max="100"
+                v-model="focusLength"
+                :scale-power="-1"
+                :only-end="false"
+            ></slider-group>
+            <slider-group
                 label="offset x"
                 :min="-200"
                 :max="200"
@@ -59,6 +81,38 @@
                 :max="200"
                 v-model="yOffset"
                 :scale-power="-2"
+                :only-end="false"
+            ></slider-group>
+            <slider-group
+                label="offset z"
+                :min="-100"
+                :max="100"
+                v-model="zOffset"
+                :scale-power="-2"
+                :only-end="false"
+            ></slider-group>
+            <slider-group
+                label="rotation x"
+                :min="-180"
+                :max="180"
+                v-model="xRotation"
+                :scale-power="0"
+                :only-end="false"
+            ></slider-group>
+            <slider-group
+                label="rotation y"
+                :min="-180"
+                :max="180"
+                v-model="yRotation"
+                :scale-power="0"
+                :only-end="false"
+            ></slider-group>
+            <slider-group
+                label="rotation z"
+                :min="-180"
+                :max="180"
+                v-model="zRotation"
+                :scale-power="0"
                 :only-end="false"
             ></slider-group>
         </v-row>

@@ -79,14 +79,58 @@ export function applyAdaptiveGaussianThresholding(image: Image, blockSize: numbe
     return webGlShaderComputation2d(image, fragmentShaderSource);
 }
 
-export function cameraProjection(image: Image, xOffset: number, yOffset: number): Image {
+export function cameraProjection(
+    image: Image,
+    focusLength: number,
+    xOffset: number,
+    yOffset: number,
+    zOffset: number,
+    xRot: number,
+    yRot: number,
+    zRot: number
+): Image {
     const vertexShaderSource = `
         attribute vec2 a_position;
         attribute vec2 a_texcoord;
         varying vec2 v_texcoord;
-        
+        #define pi 3.1415926535897932384626433832795
+
         void main() {
-            gl_Position = vec4(a_position[0] + ${xOffset.toFixed(3)}, a_position[1] + ${yOffset.toFixed(3)}, 0.0, 1.0);
+            vec4 pos = vec4(a_position, 1.0, 1.0);
+    
+            const float f = ${focusLength.toFixed(3)}; // TODO doesn't do anything currently
+            const mat4 translationMatrix = mat4(
+                1.0, 0.0, 0.0, ${xOffset.toFixed(3)},
+                0.0, 1.0, 0.0, ${yOffset.toFixed(3)},
+                0.0, 0.0, 1.0, ${zOffset.toFixed(3)},
+                0.0, 0.0, 0.0, 1.0
+            );
+            const mat4 rotationMatrixX = mat4(
+                1.0, 0.0, 0.0, 0.0,
+                0.0,  cos(${xRot.toFixed(3)} * pi / 180.0), sin(${xRot.toFixed(3)} * pi / 180.0), 0.0,
+                0.0, -sin(${xRot.toFixed(3)} * pi / 180.0), cos(${xRot.toFixed(3)} * pi / 180.0), 0.0,
+                0.0, 0.0, 0.0, 1.0
+            );
+            const mat4 rotationMatrixY = mat4(
+                 cos(${yRot.toFixed(3)} * pi / 180.0), 0.0, sin(${yRot.toFixed(3)} * pi / 180.0), 0.0,
+                0.0, 1.0, 0.0, 0.0,
+                -sin(${yRot.toFixed(3)} * pi / 180.0), 0.0, cos(${yRot.toFixed(3)} * pi / 180.0), 0.0,
+                0.0, 0.0, 0.0, 1.0
+            );
+            const mat4 rotationMatrixZ = mat4(
+                cos(${zRot.toFixed(3)} * pi / 180.0), -sin(${zRot.toFixed(3)} * pi / 180.0), 0.0, 0.0,
+                sin(${zRot.toFixed(3)} * pi / 180.0),  cos(${zRot.toFixed(3)} * pi / 180.0), 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0
+            );
+
+            // somehow this is transposed to how it should be, therefor, multiply from right
+            vec4 translated = pos * rotationMatrixX * rotationMatrixY * rotationMatrixZ * translationMatrix;
+
+            // easier to do manually, than matrix and then scale
+            vec4 perspective = vec4(translated[0] / translated[2], translated[1] / translated[2], 0.0, 1.0);
+
+            gl_Position = perspective;
             v_texcoord = a_texcoord;
         }
     `;
