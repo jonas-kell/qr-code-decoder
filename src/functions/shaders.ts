@@ -128,8 +128,6 @@ export function cameraProjection(
             vec4 translated = pos * rotationMatrixX * rotationMatrixY * rotationMatrixZ * translationMatrix;
             
             // https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix.html
-            const float farClipping = 5.0;
-            const float nearClipping = 0.05;
             const mat4 perspectiveMatrix = mat4(
                 1.0, 0.0, 0.0, 0.0,
                 0.0, 1.0, 0.0, 0.0,
