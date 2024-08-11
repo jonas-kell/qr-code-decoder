@@ -1,4 +1,5 @@
 import { Image } from "./image";
+import { newtonMethodRange } from "./newton";
 
 export type FinderLinesFinder = [number, [number, number]][];
 export type FinderCoordinate = [number, number];
@@ -383,18 +384,93 @@ function orderThreeCentersCyclically(
 }
 
 export function calculateFourthCenterSquare(
-    a: FinderCoordinate,
-    b: FinderCoordinate,
-    c: FinderCoordinate
+    coord1: FinderCoordinate,
+    coord2: FinderCoordinate,
+    coord3: FinderCoordinate,
+    width: number,
+    height: number
 ): [FinderCoordinate, [FinderCoordinate, FinderCoordinate, FinderCoordinate]] {
-    const [reorderedA, reorderedB, reorderedC] = orderThreeCentersCyclically(a, b, c);
+    const [reorderedA, reorderedB, reorderedC] = orderThreeCentersCyclically(coord1, coord2, coord3);
 
-    // calculate the
-    const x = reorderedA[0] + reorderedC[0] - reorderedB[0];
-    const y = reorderedA[1] + reorderedC[1] - reorderedB[1];
+    const XA = reorderedA[0];
+    const YA = reorderedA[1];
+    const XB = reorderedB[0];
+    const YB = reorderedB[1];
+    const XC = reorderedC[0];
+    const YC = reorderedC[1];
+
+    const f = 1;
+    const zb = 1;
+    const w = width;
+    const h = height;
+
+    const C1 = (XA * f) / w;
+    const C2 = (zb * XB * f) / w;
+    const C3 = (YA * f) / h;
+    const C4 = (zb * YB * f) / h;
+    const C5 = (XC * f) / w;
+    const C6 = C2;
+    const C7 = (YC * f) / h;
+    const C8 = C4;
+
+    const D1 = C1 * C1 + C3 * C3 + 1;
+    const D2 = -2 * C1 * C2 - 2 * C3 * C4 - 2 * zb;
+    const D3 = C2 * C2 + C4 * C4 + zb * zb;
+    const D4 = -(C5 * C5 + C7 * C7 + 1);
+    const D5 = -(-2 * C5 * C6 - 2 * C7 * C8 - 2 * zb);
+    const D6 = -(C6 * C6 + C8 * C8 + zb * zb);
+
+    const E1 = 1 + C1 * C5 + C3 * C7;
+    const E2 = -C1 * C6 - C3 * C8 - zb;
+    const E3 = -C5 * C2 - C7 * C4 - zb;
+    const E4 = C2 * C6 + C4 * C8 + zb * zb;
+
+    // a = D1
+    // b = D2
+    // c = D3
+    // d = D4
+    // e = D5
+    // f = D6
+    // g = E1
+    // h = E2
+    // j = E3
+    // k = E4
+
+    const F1 = D1 * E1 * E1;
+    const F2 = D2 * E1 * E1 + 2 * D1 * E3 * E1;
+    const F3 = D1 * E3 * E3 + 2 * D2 * E1 * E3 + D3 * E1 * E1 + D4 * E2 * E2 + D6 * E1 * E1 - D5 * E1 * E2;
+    const F4 = D2 * E3 * E3 + 2 * D3 * E1 * E3 + 2 * D4 * E2 * E4 + 2 * D6 * E1 * E3 - D5 * E1 * E4 - D5 * E2 * E3;
+    const F5 = D3 * E3 * E3 + D4 * E4 * E4 + D6 * E3 * E3 - D5 * E3 * E4;
+
+    console.log(F1, F2, F3, F4, F5);
+    // const xSolutions = [0.6, 1.0469];
+    const xSolutions = newtonMethodRange([F1, F2, F3, F4, F5], -5, 5, 100);
+    console.log(xSolutions);
+
+    const za = xSolutions[1];
+    const zc = -(za * E2 + E4) / (za * E1 + E3);
+
+    const xa = (za * (XA * f)) / w;
+    const ya = (za * (YA * f)) / h;
+    const xb = (zb * (XB * f)) / w;
+    const yb = (zb * (YB * f)) / h;
+    const xc = (zc * (XC * f)) / w;
+    const yc = (zc * (YC * f)) / h;
+
+    const xd = xc + xa - xb;
+    const yd = yc + ya - yb;
+    const zd = zc + za - zb;
+
+    const XD = (xd * w) / (zd * f);
+    const YD = (yd * h) / (zd * f);
+
+    // calculate the fourth point "naively"
+    // const x = reorderedA[0] + reorderedC[0] - reorderedB[0];
+    // const y = reorderedA[1] + reorderedC[1] - reorderedB[1];
+    // [x, y],
 
     return [
-        [x, y],
+        [XD, YD],
         [reorderedA, reorderedB, reorderedC],
     ];
 }

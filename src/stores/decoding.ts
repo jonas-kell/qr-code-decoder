@@ -222,7 +222,13 @@ export default defineStore("decoding", () => {
                     const average1 = averageCoordinateWeighted(clusteredFinderLocationAssumptionsMeta[1]);
                     const average2 = averageCoordinateWeighted(clusteredFinderLocationAssumptionsMeta[2]);
 
-                    const fourthCenterMeta = calculateFourthCenterSquare(average0, average1, average2);
+                    const fourthCenterMeta = calculateFourthCenterSquare(
+                        average0,
+                        average1,
+                        average2,
+                        binarizedImage.value.getWidth(),
+                        binarizedImage.value.getHeight()
+                    );
                     edgePoints.value = [...fourthCenterMeta[1], fourthCenterMeta[0]];
 
                     endTiming("fourth Center");
