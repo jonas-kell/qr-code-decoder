@@ -242,6 +242,10 @@ function webGlShaderComputation(image: Image, vertexShaderSource: string, fragme
         return framebuffer;
     }
 
+    // Set background color to light gray
+    gl.clearColor(0.98, 0.98, 0.98, 1.0); // RGBA values
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
     // Set up shaders and program
     const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
     gl.useProgram(program);
