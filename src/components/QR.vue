@@ -2,7 +2,7 @@
     import QrcodeVue from "qrcode.vue";
     import ImageDisplayApplication from "./ImageDisplayApplication.vue";
     import { VTextField, VRow } from "vuetify/components";
-    import { onMounted, ref, watch } from "vue";
+    import { nextTick, onMounted, ref, watch } from "vue";
     import { Image } from "../functions/image";
     import SliderGroup from "./SliderGroup.vue";
     import { cameraProjection } from "../functions/shaders";
@@ -22,12 +22,12 @@
     const zRotation = ref(0);
 
     watch([xOffset, yOffset, zOffset, xRotation, yRotation, zRotation, focusLength, project], async () => {
-        setTimeout(async () => {
-            await doCameraProjection();
-        }, 100);
-    });
-    watch([value, xOffset, project], async () => {
         await doCameraProjection();
+    });
+    watch([value], () => {
+        nextTick(async () => {
+            await doCameraProjection();
+        });
     });
 
     async function doCameraProjection() {
