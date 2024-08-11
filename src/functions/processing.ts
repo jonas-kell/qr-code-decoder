@@ -383,12 +383,15 @@ function orderThreeCentersCyclically(
     return [A, B, C]; // just return some ordering
 }
 
+// https://calibdb.net/
+
 export function calculateFourthCenterSquare(
     coord1: FinderCoordinate,
     coord2: FinderCoordinate,
     coord3: FinderCoordinate,
     width: number,
-    height: number
+    height: number,
+    f: number
 ): [FinderCoordinate, [FinderCoordinate, FinderCoordinate, FinderCoordinate]] {
     const [reorderedA, reorderedB, reorderedC] = orderThreeCentersCyclically(coord1, coord2, coord3);
 
@@ -399,8 +402,7 @@ export function calculateFourthCenterSquare(
     const XC = reorderedC[0];
     const YC = reorderedC[1];
 
-    const f = 1;
-    const zb = 1;
+    const zb = 1; // tested to have no effect
     const w = width;
     const h = height;
 
@@ -444,10 +446,10 @@ export function calculateFourthCenterSquare(
 
     console.log(F1, F2, F3, F4, F5);
     // const xSolutions = [0.6, 1.0469];
-    const xSolutions = newtonMethodRange([F1, F2, F3, F4, F5], -5, 5, 100);
+    const xSolutions = newtonMethodRange([F1, F2, F3, F4, F5], -5, 5, 100, 1e-9, 0, 100);
     console.log(xSolutions);
 
-    const za = xSolutions[1];
+    const za = xSolutions[0];
     const zc = -(za * E2 + E4) / (za * E1 + E3);
 
     const xa = (za * (XA * f)) / w;

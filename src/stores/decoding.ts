@@ -163,8 +163,11 @@ export default defineStore("decoding", () => {
     const cullHarshnessMin = ref<number>(1);
     const cullHarshnessMax = ref<number>(100);
     const cullHarshness = ref<number>(35);
+    const fMin = ref<number>(10);
+    const fMax = ref<number>(1000);
+    const f = ref<number>(100);
     const edgePoints = ref<[FinderCoordinate, FinderCoordinate, FinderCoordinate, FinderCoordinate] | null>(null);
-    watch([binarizedImage, findersThreshold, weightExp, cullHarshness], () => {
+    watch([binarizedImage, findersThreshold, weightExp, cullHarshness, f], () => {
         nextTick(() => {
             if (binarizedImage.value != null) {
                 startTiming("search Finders");
@@ -227,7 +230,8 @@ export default defineStore("decoding", () => {
                         average1,
                         average2,
                         binarizedImage.value.getWidth(),
-                        binarizedImage.value.getHeight()
+                        binarizedImage.value.getHeight(),
+                        f.value / 10
                     );
                     edgePoints.value = [...fourthCenterMeta[1], fourthCenterMeta[0]];
 
@@ -360,5 +364,8 @@ export default defineStore("decoding", () => {
         cullHarshnessMin,
         cullHarshnessMax,
         cullHarshness,
+        fMin,
+        fMax,
+        f,
     };
 });

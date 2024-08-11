@@ -117,6 +117,14 @@
         <image-display-application
             :image-to-display="decodingStore.findersLocationsCulled as Image | null"
         ></image-display-application>
+
+        <slider-group
+            v-model="decodingStore.f"
+            :min="decodingStore.fMin"
+            :max="decodingStore.fMax"
+            label="Focus constant f * 10"
+            :only-end="false"
+        ></slider-group>
         <image-display-application
             :image-to-display="decodingStore.clusteredFindersLocations as Image | null"
         ></image-display-application>
