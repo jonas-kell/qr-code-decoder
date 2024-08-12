@@ -16,15 +16,20 @@
     const projection = ref(true);
     const projectionTarget = ref<Image | null>(null);
 
-    const focusLength = ref(2);
+    // the camera on my laptop (calibrated with https://calibdb.net/),
+    // has a f-value of approx 961 and a image width of 1280px
+    // the fov is computed as
+    //            FOV_horizontal [deg] = 2 * arctan(width /(2*fx)) * 180/pi = 67,32
+    //            FOV_vertical   [deg] = 2 * arctan(height/(2*fy)) * 180/pi
+    const fov = ref(67.3);
     const xOffset = ref(0);
     const yOffset = ref(0);
-    const zOffset = ref(0);
+    const zOffset = ref(2);
     const xRotation = ref(0);
     const yRotation = ref(0);
     const zRotation = ref(0);
 
-    watch([xOffset, yOffset, zOffset, xRotation, yRotation, zRotation, focusLength, projection], async () => {
+    watch([xOffset, yOffset, zOffset, xRotation, yRotation, zRotation, fov, projection], async () => {
         await doCameraProjection();
     });
     watch([value], () => {
@@ -41,7 +46,7 @@
 
         const projected = cameraProjection(
             imageFromQrGenerator,
-            focusLength.value,
+            fov.value,
             xOffset.value,
             yOffset.value,
             zOffset.value,
@@ -70,14 +75,7 @@
     <div class="container">
         <v-text-field v-model="value"></v-text-field>
         <v-row v-if="projection">
-            <slider-group
-                label="focus"
-                :min="10"
-                :max="100"
-                v-model="focusLength"
-                :scale-power="-1"
-                :only-end="false"
-            ></slider-group>
+            <slider-group label="FOV" :min="10" :max="170" v-model="fov" :scale-power="0" :only-end="false"></slider-group>
             <slider-group
                 label="offset x"
                 :min="-200"
@@ -96,8 +94,8 @@
             ></slider-group>
             <slider-group
                 label="offset z"
-                :min="-100"
-                :max="100"
+                :min="0"
+                :max="400"
                 v-model="zOffset"
                 :scale-power="-2"
                 :only-end="false"

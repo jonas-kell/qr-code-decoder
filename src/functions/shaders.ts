@@ -81,7 +81,7 @@ export function applyAdaptiveGaussianThresholding(image: Image, blockSize: numbe
 
 export function cameraProjection(
     image: Image,
-    focusLength: number,
+    fov: number,
     xOffset: number,
     yOffset: number,
     zOffset: number,
@@ -98,11 +98,10 @@ export function cameraProjection(
         void main() {
             vec4 pos = vec4(a_position, 0.0, 1.0);
     
-            const float f = ${focusLength.toFixed(3)}; // TODO doesn't do anything currently
             const mat4 translationMatrix = mat4(
                 1.0, 0.0, 0.0, ${xOffset.toFixed(3)},
                 0.0, 1.0, 0.0, ${yOffset.toFixed(3)},
-                0.0, 0.0, 1.0, ${zOffset.toFixed(3)} + 1.5, // move away by default
+                0.0, 0.0, 1.0, ${zOffset.toFixed(3)},
                 0.0, 0.0, 0.0, 1.0
             );
             const mat4 rotationMatrixX = mat4(
@@ -128,9 +127,12 @@ export function cameraProjection(
             vec4 translated = pos * rotationMatrixX * rotationMatrixY * rotationMatrixZ * translationMatrix;
             
             // https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix.html
+
+            const float fov = ${fov.toFixed(3)};
+            const float oneOverfFactor = 1.0 / tan((fov / 2.0) * (pi / 180.0));
             const mat4 perspectiveMatrix = mat4(
-                1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
+                oneOverfFactor, 0.0, 0.0, 0.0,
+                0.0, oneOverfFactor, 0.0, 0.0,
                 0.0, 0.0, 1.0, 1.0,
                 0.0, 0.0, 0.0, 0.0
             );
