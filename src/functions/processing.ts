@@ -4,7 +4,7 @@ import { newtonMethodRange } from "./newton";
 export type FinderLinesFinder = [number, [number, number]][];
 export type FinderCoordinate = [number, number];
 export type FinderCoordinates = FinderCoordinate[];
-export type FinderCoordinateMeta = [FinderCoordinate, number];
+export type FinderCoordinateMeta = [FinderCoordinate, number, number, number]; // coordinate, weight, width, height
 
 const BLACK = 0;
 const WHITE = 255;
@@ -155,7 +155,12 @@ export function possibleFinderPoints(
                             finderLineVertical[0] - finderLineHorizontal[1][0]
                         );
 
-                    coordsMeta.push([[finderLineVertical[0], finderLineHorizontal[0]], weight]);
+                    coordsMeta.push([
+                        [finderLineVertical[0], finderLineHorizontal[0]],
+                        weight,
+                        finderLineHorizontal[1][1] - finderLineHorizontal[1][0],
+                        finderLineVertical[1][1] - finderLineVertical[1][0],
+                    ]);
                 }
             }
         });
@@ -169,7 +174,7 @@ export function possibleFinderPoints(
         });
 
         const newWeight = Math.pow(meta[1] * sum, weightExp);
-        return [meta[0], newWeight] as FinderCoordinateMeta;
+        return [meta[0], newWeight, meta[2], meta[3]] as FinderCoordinateMeta;
     });
 
     return res;
@@ -181,7 +186,7 @@ export function cullOutliers(coordinateMeta: FinderCoordinateMeta[], harshness: 
             return acc + a[1];
         }, 0) / coordinateMeta.length;
     const variance =
-        coordinateMeta.reduce((acc: number, a: [any, number]) => {
+        coordinateMeta.reduce((acc: number, a: [any, number, any, any]) => {
             const diff = a[1] - averageWeight;
             return acc + diff * diff;
         }, 0) / coordinateMeta.length;
@@ -269,7 +274,7 @@ export function weightedKMeans(
             centroids = centroids.map((_, index) => {
                 const clusterPoints = clusters[index];
                 if (clusterPoints.length === 0) return previousCentroids[index]; // Handle empty clusters
-                return averageCoordinateWeighted(clusterPoints);
+                return averageCoordinateWeighted(clusterPoints)[0];
             });
 
             // Check for convergence (if centroids do not change)
@@ -310,26 +315,30 @@ function averageCoordinate(points: FinderCoordinates): FinderCoordinate {
     return [x, y];
 }
 
-export function averageCoordinateWeighted(points: FinderCoordinateMeta[]): FinderCoordinate {
+export function averageCoordinateWeighted(points: FinderCoordinateMeta[]): FinderCoordinateMeta {
     let cumWeight = 0;
     let cumX = 0;
     let cumY = 0;
+    let cumWidth = 0;
+    let cumHeight = 0;
 
     points.forEach((meta) => {
         const weight = meta[1];
         cumWeight += weight;
         cumX += meta[0][0] * weight;
         cumY += meta[0][1] * weight;
+        cumWidth += meta[2] * weight;
+        cumHeight += meta[3] * weight;
     });
 
-    return [cumX / cumWeight, cumY / cumWeight];
+    return [[cumX / cumWeight, cumY / cumWeight], cumWeight, cumWidth / cumWeight, cumHeight / cumWeight];
 }
 
 function orderThreeCentersCyclically(
-    a: FinderCoordinate,
-    b: FinderCoordinate,
-    c: FinderCoordinate
-): [FinderCoordinate, FinderCoordinate, FinderCoordinate] {
+    a: FinderCoordinateMeta,
+    b: FinderCoordinateMeta,
+    c: FinderCoordinateMeta
+): [FinderCoordinateMeta, FinderCoordinateMeta, FinderCoordinateMeta] {
     // Function to compute the angle between a point and the centroid
     function calculateAngle(point: FinderCoordinate, center: FinderCoordinate): number {
         const [x, y] = point;
@@ -338,8 +347,8 @@ function orderThreeCentersCyclically(
     }
 
     // Function to order the points cyclically around their common center
-    function sortByAngle(points: FinderCoordinate[], center: FinderCoordinate): FinderCoordinate[] {
-        return points.sort((a, b) => calculateAngle(a, center) - calculateAngle(b, center));
+    function sortByAngle(points: FinderCoordinateMeta[], center: FinderCoordinate): FinderCoordinateMeta[] {
+        return points.sort((a, b) => calculateAngle(a[0], center) - calculateAngle(b[0], center));
     }
 
     function calculateAngleVec(center: FinderCoordinate, from: FinderCoordinate, to: FinderCoordinate): number {
@@ -357,15 +366,19 @@ function orderThreeCentersCyclically(
     }
 
     // order cyclically
-    const commonCenter = averageCoordinate([a, b, c]);
+    const commonCenter = averageCoordinate([a[0], b[0], c[0]]);
 
-    const sortedPoints = sortByAngle([a, b, c], commonCenter) as [FinderCoordinate, FinderCoordinate, FinderCoordinate];
+    const sortedPoints = sortByAngle([a, b, c], commonCenter) as [
+        FinderCoordinateMeta,
+        FinderCoordinateMeta,
+        FinderCoordinateMeta
+    ];
 
     // make it start with the "lower left", then "top left" and finally "top right" -> search for the largest "in-between" angle
     const [A, B, C] = sortedPoints;
-    const angleACenter = calculateAngleVec(A, C, B);
-    const angleBCenter = calculateAngleVec(B, A, C);
-    const angleCCenter = calculateAngleVec(C, B, A);
+    const angleACenter = calculateAngleVec(A[0], C[0], B[0]);
+    const angleBCenter = calculateAngleVec(B[0], A[0], C[0]);
+    const angleCCenter = calculateAngleVec(C[0], B[0], A[0]);
 
     if (angleACenter > angleBCenter && angleACenter > angleCCenter) {
         return [C, A, B];
@@ -386,30 +399,27 @@ function orderThreeCentersCyclically(
 // https://calibdb.net/
 // https://monman53.github.io/2dfft/
 
-export function calculateFourthCenterSquare(
-    coord1: FinderCoordinate,
-    coord2: FinderCoordinate,
-    coord3: FinderCoordinate,
+export function calculateFourthCenterProjection(
+    coord1: FinderCoordinateMeta,
+    coord2: FinderCoordinateMeta,
+    coord3: FinderCoordinateMeta,
     width: number,
     height: number,
     fx: number,
     fy: number
-): [FinderCoordinate, [FinderCoordinate, FinderCoordinate, FinderCoordinate]] {
-    console.log("picture", width, height);
-    console.log("starting", coord1, coord2, coord3);
+): FinderCoordinate {
     const [reorderedA, reorderedB, reorderedC] = orderThreeCentersCyclically(coord1, coord2, coord3);
-    console.log("ordered", reorderedA, reorderedB, reorderedC);
 
     const w = width / 2;
     const h = height / 2;
     const zb = 1; // tested to have no effect
 
-    const XA = reorderedA[0] - w;
-    const YA = reorderedA[1] - h;
-    const XB = reorderedB[0] - w;
-    const YB = reorderedB[1] - h;
-    const XC = reorderedC[0] - w;
-    const YC = reorderedC[1] - h;
+    const XA = reorderedA[0][0] - w;
+    const YA = reorderedA[0][1] - h;
+    const XB = reorderedB[0][0] - w;
+    const YB = reorderedB[0][1] - h;
+    const XC = reorderedC[0][0] - w;
+    const YC = reorderedC[0][1] - h;
 
     const C1 = (XA * fx) / w;
     const C2 = (zb * XB * fx) / w;
@@ -454,8 +464,8 @@ export function calculateFourthCenterSquare(
     // console.log(F1, F2, F3, F4, F5); // the solving of the polynomial works
 
     // calculate the fourth point "naively"
-    const naiveX = reorderedA[0] + reorderedC[0] - reorderedB[0];
-    const naiveY = reorderedA[1] + reorderedC[1] - reorderedB[1];
+    const naiveX = reorderedA[0][0] + reorderedC[0][0] - reorderedB[0][0];
+    const naiveY = reorderedA[0][1] + reorderedC[0][1] - reorderedB[0][1];
 
     let resX = null as null | number;
     let resY = null as null | number;
@@ -513,7 +523,23 @@ export function calculateFourthCenterSquare(
     }
 
     return [
-        [resX as number, resY as number], // they get set in any case !!!
+        resX as number,
+        resY as number, // they get set in any case !!!
+    ];
+}
+
+export function calculateFourthCenterSquare(
+    coord1: FinderCoordinateMeta,
+    coord2: FinderCoordinateMeta,
+    coord3: FinderCoordinateMeta
+): [FinderCoordinate, [FinderCoordinateMeta, FinderCoordinateMeta, FinderCoordinateMeta]] {
+    const [reorderedA, reorderedB, reorderedC] = orderThreeCentersCyclically(coord1, coord2, coord3);
+
+    const naiveX = reorderedA[0][0] + reorderedC[0][0] - reorderedB[0][0];
+    const naiveY = reorderedA[0][1] + reorderedC[0][1] - reorderedB[0][1];
+
+    return [
+        [naiveX as number, naiveY as number],
         [reorderedA, reorderedB, reorderedC],
     ];
 }

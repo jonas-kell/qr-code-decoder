@@ -3,7 +3,7 @@ import { computed, ref, watch, nextTick as vueNextTick } from "vue";
 import { Image } from "../functions/image";
 import {
     FinderCoordinate,
-    calculateFourthCenterSquare,
+    calculateFourthCenterProjection,
     drawFinderPointsOnImage,
     drawHorizontalFinderLinesOnImage,
     drawVerticalFinderLinesOnImage,
@@ -13,6 +13,8 @@ import {
     possibleFinderPoints,
     averageCoordinateWeighted,
     cullOutliers,
+    calculateFourthCenterSquare,
+    FinderCoordinateMeta,
 } from "../functions/processing";
 
 export default defineStore("decoding", () => {
@@ -179,7 +181,7 @@ export default defineStore("decoding", () => {
         return (Math.tan((fovy.value / 2) * (Math.PI / 180)) * dimension) / 2;
     });
     // end fov computations
-    const edgePoints = ref<[FinderCoordinate, FinderCoordinate, FinderCoordinate, FinderCoordinate] | null>(null);
+    const edgePoints = ref<[FinderCoordinateMeta, FinderCoordinateMeta, FinderCoordinateMeta, FinderCoordinate] | null>(null);
     watch([binarizedImage, findersThreshold, weightExp, cullHarshness, fx, fy], () => {
         nextTick(() => {
             if (binarizedImage.value != null) {
@@ -238,7 +240,7 @@ export default defineStore("decoding", () => {
                     const average1 = averageCoordinateWeighted(clusteredFinderLocationAssumptionsMeta[1]);
                     const average2 = averageCoordinateWeighted(clusteredFinderLocationAssumptionsMeta[2]);
 
-                    const fourthCenterMeta = calculateFourthCenterSquare(
+                    const fourthCenterMetaProjection = calculateFourthCenterProjection(
                         average0,
                         average1,
                         average2,
@@ -247,7 +249,8 @@ export default defineStore("decoding", () => {
                         fx.value,
                         fy.value
                     );
-                    const centers: [FinderCoordinate, FinderCoordinate, FinderCoordinate, FinderCoordinate] = [
+                    const fourthCenterMeta = calculateFourthCenterSquare(average0, average1, average2);
+                    const centers: [FinderCoordinateMeta, FinderCoordinateMeta, FinderCoordinateMeta, FinderCoordinate] = [
                         fourthCenterMeta[1][0],
                         fourthCenterMeta[1][1],
                         fourthCenterMeta[1][2],
@@ -273,10 +276,11 @@ export default defineStore("decoding", () => {
                         clusteredFinderLocationAssumptions[2],
                         "green"
                     );
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[0]], "blue", 30);
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[1]], "red", 30);
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[2]], "green", 30);
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[3]], "purple", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[0][0]], "blue", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[1][0]], "red", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[2][0]], "green", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[3]], "orange", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [fourthCenterMetaProjection], "purple", 30);
 
                     clusteredFindersLocations.value = clusterDrawTarget;
 
@@ -307,7 +311,10 @@ export default defineStore("decoding", () => {
                 reProjected.value = await binarizedImage.value.applyPerspectiveTransformation(
                     side + 2 * offset,
                     side + 2 * offset,
-                    ...edgePoints.value,
+                    edgePoints.value[0][0],
+                    edgePoints.value[1][0],
+                    edgePoints.value[2][0],
+                    edgePoints.value[3],
                     offset, // t1x
                     offset + side, // t1y
                     offset, // t2x
