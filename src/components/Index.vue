@@ -124,6 +124,7 @@
             :max="decodingStore.fovxMax"
             :label="'Field of view (x)    (fx=' + decodingStore.fx.toFixed(3) + ')'"
             :only-end="false"
+            :slider-precision-power="-1"
         ></slider-group>
         <slider-group
             v-model="decodingStore.fovy"
@@ -131,6 +132,7 @@
             :max="decodingStore.fovyMax"
             :label="'Field of view (y)    (fy=' + decodingStore.fy.toFixed(3) + ')'"
             :only-end="false"
+            :slider-precision-power="-1"
         ></slider-group>
         <image-display-application
             :image-to-display="decodingStore.clusteredFindersLocations as Image | null"

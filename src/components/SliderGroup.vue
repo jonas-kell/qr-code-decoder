@@ -10,10 +10,12 @@
             onlyEnd?: boolean;
             label: string;
             scalePower?: number;
+            sliderPrecisionPower?: number;
         }>(),
         {
             onlyEnd: false,
             scalePower: 0,
+            sliderPrecisionPower: 0,
         }
     );
     const emit = defineEmits<{
@@ -50,7 +52,7 @@
             :max="props.max * Math.pow(10, props.scalePower)"
             :hide-details="true"
             thumb-label
-            :step="1 * Math.pow(10, props.scalePower)"
+            :step="1 * Math.pow(10, props.scalePower) * Math.pow(10, props.sliderPrecisionPower)"
             @end="
                 (newVal) => {
                     if (onlyEnd) {
