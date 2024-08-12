@@ -396,16 +396,16 @@ export function calculateFourthCenterSquare(
 ): [FinderCoordinate, [FinderCoordinate, FinderCoordinate, FinderCoordinate]] {
     const [reorderedA, reorderedB, reorderedC] = orderThreeCentersCyclically(coord1, coord2, coord3);
 
-    const w = width / 2;
-    const h = height / 2;
+    const w = width;
+    const h = height;
     const zb = 1; // tested to have no effect
 
-    const XA = reorderedA[0] - w;
-    const YA = reorderedA[1] - h;
-    const XB = reorderedB[0] - w;
-    const YB = reorderedB[1] - h;
-    const XC = reorderedC[0] - w;
-    const YC = reorderedC[1] - h;
+    const XA = reorderedA[0];
+    const YA = reorderedA[1];
+    const XB = reorderedB[0];
+    const YB = reorderedB[1];
+    const XC = reorderedC[0];
+    const YC = reorderedC[1];
 
     const C1 = (XA * f) / w;
     const C2 = (zb * XB * f) / w;
@@ -479,21 +479,15 @@ export function calculateFourthCenterSquare(
             const XD = (xd * w) / (zd * f);
             const YD = (yd * h) / (zd * f);
 
-            const XDretransformed = XD + w;
-            const YDretransformed = YD + h;
-
             if (resX != null && resY != null) {
-                if (
-                    euclideanDistance([naiveX, naiveY], [XDretransformed, YDretransformed]) <
-                    euclideanDistance([naiveX, naiveY], [resX, resY])
-                ) {
-                    resX = XDretransformed;
-                    resY = YDretransformed;
+                if (euclideanDistance([naiveX, naiveY], [XD, YD]) < euclideanDistance([naiveX, naiveY], [resX, resY])) {
+                    resX = XD;
+                    resY = YD;
                     tookIndex = index;
                 }
             } else {
-                resX = XDretransformed;
-                resY = YDretransformed;
+                resX = XD;
+                resY = YD;
                 tookIndex = index;
             }
         });
