@@ -447,7 +447,7 @@ export function calculateFourthCenterSquare(
 
     const xSolutions = newtonMethodRange([F1, F2, F3, F4, F5], -5, 5, 100, 1e-9, 0, 100);
 
-    console.log(F1, F2, F3, F4, F5);
+    // console.log(F1, F2, F3, F4, F5); // the solving of the polynomial works
 
     // calculate the fourth point "naively"
     const naiveX = reorderedA[0] + reorderedC[0] - reorderedB[0];

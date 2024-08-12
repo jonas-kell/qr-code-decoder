@@ -233,7 +233,14 @@ export default defineStore("decoding", () => {
                         binarizedImage.value.getHeight(),
                         f.value / 10
                     );
-                    edgePoints.value = [...fourthCenterMeta[1], fourthCenterMeta[0]];
+                    const centers: [FinderCoordinate, FinderCoordinate, FinderCoordinate, FinderCoordinate] = [
+                        fourthCenterMeta[1][0],
+                        fourthCenterMeta[1][1],
+                        fourthCenterMeta[1][2],
+                        fourthCenterMeta[0],
+                    ];
+                    edgePoints.value = structuredClone(centers); // do not give reference that is used here into ref
+                    console.log("This is drawn", edgePoints.value);
 
                     endTiming("fourth Center");
 
@@ -252,10 +259,10 @@ export default defineStore("decoding", () => {
                         clusteredFinderLocationAssumptions[2],
                         "green"
                     );
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [edgePoints.value[0]], "blue", 30);
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [edgePoints.value[1]], "red", 30);
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [edgePoints.value[2]], "green", 30);
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [edgePoints.value[3]], "purple", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[0]], "blue", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[1]], "red", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[2]], "green", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[3]], "purple", 30);
 
                     clusteredFindersLocations.value = clusterDrawTarget;
 
