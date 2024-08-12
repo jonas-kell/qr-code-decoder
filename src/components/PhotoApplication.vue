@@ -5,6 +5,7 @@
 
     function removePhoto() {
         heldImageUrl.value = null;
+        heldImageInfo.value = "";
     }
 
     const props = defineProps<{
@@ -19,7 +20,9 @@
         async (now) => {
             if (now.takePhoto) {
                 console.log("Externally triggered taking photo");
-                emit("frameTaken", (await takePicture()).image);
+                const image = (await takePicture()).image;
+                emit("frameTaken", image);
+                heldImageInfo.value = image.getImageMetaText();
             }
         },
         {
@@ -37,6 +40,7 @@
     const hasImage = computed(() => {
         return heldImageUrl.value != null && heldImageUrl.value.length > 50;
     });
+    const heldImageInfo = ref("");
 
     const hasCamera = ref(false);
 
@@ -55,6 +59,7 @@
             const video = document.getElementById("video") as HTMLVideoElement;
             if (video != null) {
                 video.srcObject = stream;
+                console.log(stream.getVideoTracks()[0].getSettings()); // print media information
             } else {
                 console.log("Did not find Video HTML element");
             }
@@ -88,6 +93,7 @@
         const data = await takePicture();
 
         heldImageUrl.value = data.url;
+        heldImageInfo.value = data.image.getImageMetaText();
         emit("frameTaken", data.image);
     }
 
@@ -156,6 +162,7 @@
         const image = await Image.generateImage(dataURL);
 
         heldImageUrl.value = dataURL;
+        heldImageInfo.value = image.getImageMetaText();
         emit("frameTaken", image);
     }
 
@@ -171,6 +178,7 @@
             const image = await Image.generateImage(url);
 
             heldImageUrl.value = url;
+            heldImageInfo.value = image.getImageMetaText();
             emit("frameTaken", image);
         }
     }
@@ -214,6 +222,7 @@
                     <v-btn id="upload-btn" icon="mdi-file-upload" v-on:click="handleFileSelection"></v-btn>
                 </template>
             </v-row>
+            <v-row class="v-col-12 ma-0 pa-0" justify="center" no-gutters>{{ heldImageInfo }}</v-row>
         </v-row>
         <canvas style="display: none" id="canvas"></canvas>
         <div style="display: none" id="file_reader_target"></div>

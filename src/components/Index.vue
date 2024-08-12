@@ -119,10 +119,17 @@
         ></image-display-application>
 
         <slider-group
-            v-model="decodingStore.f"
-            :min="decodingStore.fMin"
-            :max="decodingStore.fMax"
-            label="Focus constant f * 10"
+            v-model="decodingStore.fovx"
+            :min="decodingStore.fovxMin"
+            :max="decodingStore.fovxMax"
+            :label="'Field of view (x)    (fx=' + decodingStore.fx.toFixed(3) + ')'"
+            :only-end="false"
+        ></slider-group>
+        <slider-group
+            v-model="decodingStore.fovy"
+            :min="decodingStore.fovyMin"
+            :max="decodingStore.fovyMax"
+            :label="'Field of view (y)    (fy=' + decodingStore.fy.toFixed(3) + ')'"
             :only-end="false"
         ></slider-group>
         <image-display-application

@@ -163,11 +163,24 @@ export default defineStore("decoding", () => {
     const cullHarshnessMin = ref<number>(1);
     const cullHarshnessMax = ref<number>(100);
     const cullHarshness = ref<number>(35);
-    const fMin = ref<number>(10);
-    const fMax = ref<number>(1000);
-    const f = ref<number>(100);
+    // start fov computations
+    const fovxMin = ref<number>(10);
+    const fovxMax = ref<number>(170);
+    const fovyMin = ref<number>(10);
+    const fovyMax = ref<number>(170);
+    const fovx = ref<number>(61);
+    const fovy = ref<number>(61);
+    const fx = computed(() => {
+        const dimension = (binarizedImage.value as Image | null)?.getWidth() ?? 100;
+        return (Math.tan((fovx.value / 2) * (Math.PI / 180)) * dimension) / 2;
+    });
+    const fy = computed(() => {
+        const dimension = (binarizedImage.value as Image | null)?.getHeight() ?? 100;
+        return (Math.tan((fovy.value / 2) * (Math.PI / 180)) * dimension) / 2;
+    });
+    // end fov computations
     const edgePoints = ref<[FinderCoordinate, FinderCoordinate, FinderCoordinate, FinderCoordinate] | null>(null);
-    watch([binarizedImage, findersThreshold, weightExp, cullHarshness, f], () => {
+    watch([binarizedImage, findersThreshold, weightExp, cullHarshness, fx, fy], () => {
         nextTick(() => {
             if (binarizedImage.value != null) {
                 startTiming("search Finders");
@@ -231,7 +244,8 @@ export default defineStore("decoding", () => {
                         average2,
                         binarizedImage.value.getWidth(),
                         binarizedImage.value.getHeight(),
-                        f.value / 10
+                        fx.value,
+                        fy.value
                     );
                     const centers: [FinderCoordinate, FinderCoordinate, FinderCoordinate, FinderCoordinate] = [
                         fourthCenterMeta[1][0],
@@ -371,8 +385,13 @@ export default defineStore("decoding", () => {
         cullHarshnessMin,
         cullHarshnessMax,
         cullHarshness,
-        fMin,
-        fMax,
-        f,
+        fovxMin,
+        fovxMax,
+        fovx,
+        fx,
+        fovyMin,
+        fovyMax,
+        fovy,
+        fy,
     };
 });

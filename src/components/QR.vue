@@ -1,3 +1,4 @@
+f
 <script setup lang="ts">
     import QrcodeVue from "qrcode.vue";
     import ImageDisplayApplication from "./ImageDisplayApplication.vue";
@@ -17,11 +18,13 @@
     const projectionTarget = ref<Image | null>(null);
 
     // the camera on my laptop (calibrated with https://calibdb.net/),
-    // has a f-value of approx 961 and a image width of 1280px
+    // has a fx-value of approx 640.5 and a image width of 640
+    // has a fy-value of approx 641.6 and a image height of 480
     // the fov is computed as
-    //            FOV_horizontal [deg] = 2 * arctan(width /(2*fx)) * 180/pi = 67,32
-    //            FOV_vertical   [deg] = 2 * arctan(height/(2*fy)) * 180/pi
-    const fov = ref(67.3);
+    //            FOV_horizontal [deg] = 2 * arctan(width /(2*fx)) * 180/pi = 53.1
+    //            FOV_vertical   [deg] = 2 * arctan(height/(2*fy)) * 180/pi = 41.0
+    // (for larger resolution, fx: 960 / 1280 -> 67.3)
+    const fov = ref(60);
     const xOffset = ref(0);
     const yOffset = ref(0);
     const zOffset = ref(2);
@@ -95,7 +98,7 @@
             <slider-group
                 label="offset z"
                 :min="0"
-                :max="400"
+                :max="1200"
                 v-model="zOffset"
                 :scale-power="-2"
                 :only-end="false"

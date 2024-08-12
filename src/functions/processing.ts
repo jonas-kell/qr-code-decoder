@@ -392,7 +392,8 @@ export function calculateFourthCenterSquare(
     coord3: FinderCoordinate,
     width: number,
     height: number,
-    f: number
+    fx: number,
+    fy: number
 ): [FinderCoordinate, [FinderCoordinate, FinderCoordinate, FinderCoordinate]] {
     console.log("picture", width, height);
     console.log("starting", coord1, coord2, coord3);
@@ -410,13 +411,13 @@ export function calculateFourthCenterSquare(
     const XC = reorderedC[0] - w;
     const YC = reorderedC[1] - h;
 
-    const C1 = (XA * f) / w;
-    const C2 = (zb * XB * f) / w;
-    const C3 = (YA * f) / h;
-    const C4 = (zb * YB * f) / h;
-    const C5 = (XC * f) / w;
+    const C1 = (XA * fx) / w;
+    const C2 = (zb * XB * fx) / w;
+    const C3 = (YA * fy) / h;
+    const C4 = (zb * YB * fy) / h;
+    const C5 = (XC * fx) / w;
     const C6 = C2;
-    const C7 = (YC * f) / h;
+    const C7 = (YC * fy) / h;
     const C8 = C4;
 
     const D1 = C1 * C1 + C3 * C3 + 1;
@@ -465,32 +466,30 @@ export function calculateFourthCenterSquare(
     } else {
         let tookIndex = -1;
         xSolutions.forEach((solution, index) => {
-            // const za = solution;
             const za = solution;
             const zc = -(za * E2 + E4) / (za * E1 + E3);
-            // const zc = 5.192275872; // za=1, -20° -> 1.4168008615366117
 
-            const xa = (za * (XA * f)) / w;
-            const ya = (za * (YA * f)) / h;
-            const xb = (zb * (XB * f)) / w;
-            const yb = (zb * (YB * f)) / h;
-            const xc = (zc * (XC * f)) / w;
-            const yc = (zc * (YC * f)) / h;
+            const xa = (za * (XA * fx)) / w;
+            const ya = (za * (YA * fy)) / h;
+            const xb = (zb * (XB * fx)) / w;
+            const yb = (zb * (YB * fy)) / h;
+            const xc = (zc * (XC * fx)) / w;
+            const yc = (zc * (YC * fy)) / h;
 
             const xd = xc + xa - xb;
             const yd = yc + ya - yb;
             const zd = zc + za - zb;
 
-            console.log(xa, ya, za);
-            console.log(xb, yb, zb);
-            console.log(xc, yc, zc);
-            console.log(xd, yd, zd);
-            console.log((xa - xb) ** 2 + (ya - yb) ** 2 + (za - zb) ** 2);
-            console.log((xc - xb) ** 2 + (yc - yb) ** 2 + (zc - zb) ** 2);
-            console.log((xa - xb) * (xc - xb) + (ya - yb) * (yc - yb) + (za - zb) * (zc - zb));
+            // console.log(xa, ya, za);
+            // console.log(xb, yb, zb);
+            // console.log(xc, yc, zc);
+            // console.log(xd, yd, zd);
+            // console.log((xa - xb) ** 2 + (ya - yb) ** 2 + (za - zb) ** 2);
+            // console.log((xc - xb) ** 2 + (yc - yb) ** 2 + (zc - zb) ** 2);
+            // console.log((xa - xb) * (xc - xb) + (ya - yb) * (yc - yb) + (za - zb) * (zc - zb));
 
-            const XD = (xd * w) / (zd * f);
-            const YD = (yd * h) / (zd * f);
+            const XD = (xd * w) / (zd * fx);
+            const YD = (yd * h) / (zd * fy);
 
             const XDcentered = XD + w;
             const YDcentered = YD + h;

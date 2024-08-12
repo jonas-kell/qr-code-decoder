@@ -14,6 +14,10 @@ export class Image {
         this.ctx = ctxBuf;
     }
 
+    public getImageMetaText(): string {
+        return `${this.getWidth()} x ${this.getHeight()}`;
+    }
+
     public blur(radius: number): Image {
         return blur(this, radius);
     }
