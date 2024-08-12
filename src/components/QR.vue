@@ -24,10 +24,10 @@ f
     //            FOV_horizontal [deg] = 2 * arctan(width /(2*fx)) * 180/pi = 53.1
     //            FOV_vertical   [deg] = 2 * arctan(height/(2*fy)) * 180/pi = 41.0
     // (for larger resolution, fx: 960 / 1280 -> 67.3)
-    const fov = ref(60);
+    const fov = ref(35);
     const xOffset = ref(0);
     const yOffset = ref(0);
-    const zOffset = ref(2);
+    const zOffset = ref(3.5);
     const xRotation = ref(0);
     const yRotation = ref(0);
     const zRotation = ref(0);

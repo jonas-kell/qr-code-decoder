@@ -573,5 +573,9 @@ export function fourthFinderSearchBoundary(
 ): Square {
     const [D, [A, B, C]] = calculateFourthCenterSquare(a, b, c);
 
+    A;
+    B;
+    C;
+
     return [D[0] - radius, D[1] - radius, 2 * radius, 2 * radius];
 }
