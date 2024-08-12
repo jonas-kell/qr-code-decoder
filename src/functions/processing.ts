@@ -543,3 +543,35 @@ export function calculateFourthCenterSquare(
         [reorderedA, reorderedB, reorderedC],
     ];
 }
+
+export type Square = [number, number, number, number];
+
+export function calculateFinderBoundaries(
+    a: FinderCoordinateMeta,
+    b: FinderCoordinateMeta,
+    c: FinderCoordinateMeta
+): [Square, Square, Square] {
+    function getSquare(finder: FinderCoordinateMeta): Square {
+        const coord = finder[0];
+        const width = finder[2];
+        const height = finder[3];
+
+        const x = coord[0] - width / 2;
+        const y = coord[1] - height / 2;
+
+        return [x, y, width, height];
+    }
+
+    return [getSquare(a), getSquare(b), getSquare(c)];
+}
+
+export function fourthFinderSearchBoundary(
+    a: FinderCoordinateMeta,
+    b: FinderCoordinateMeta,
+    c: FinderCoordinateMeta,
+    radius: number
+): Square {
+    const [D, [A, B, C]] = calculateFourthCenterSquare(a, b, c);
+
+    return [D[0] - radius, D[1] - radius, 2 * radius, 2 * radius];
+}

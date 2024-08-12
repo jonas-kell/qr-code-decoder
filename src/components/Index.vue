@@ -117,7 +117,6 @@
         <image-display-application
             :image-to-display="decodingStore.findersLocationsCulled as Image | null"
         ></image-display-application>
-
         <slider-group
             v-model="decodingStore.fovx"
             :min="decodingStore.fovxMin"
@@ -137,6 +136,15 @@
         <image-display-application
             :image-to-display="decodingStore.clusteredFindersLocations as Image | null"
         ></image-display-application>
+        <h3>Markings and fourth location</h3>
+        <slider-group
+            v-model="decodingStore.forthCenterSearchRadius"
+            :min="decodingStore.forthCenterSearchRadiusMin"
+            :max="decodingStore.forthCenterSearchRadiusMax"
+            label="Fourth center search radius"
+            :only-end="false"
+        ></slider-group>
+        <image-display-application :image-to-display="decodingStore.areaMarkings as Image | null"></image-display-application>
         <h3>Re-Project</h3>
         <slider-group
             v-model="decodingStore.reProjectOffset"

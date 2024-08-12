@@ -15,6 +15,8 @@ import {
     cullOutliers,
     calculateFourthCenterSquare,
     FinderCoordinateMeta,
+    calculateFinderBoundaries,
+    fourthFinderSearchBoundary,
 } from "../functions/processing";
 
 export default defineStore("decoding", () => {
@@ -293,6 +295,40 @@ export default defineStore("decoding", () => {
         });
     });
 
+    const areaMarkings = ref<Image | null>(null);
+    const forthCenterSearchRadiusMin = ref<number>(5);
+    const forthCenterSearchRadiusMax = ref<number>(100);
+    const forthCenterSearchRadius = ref<number>(30);
+    watch([clusteredFindersLocations, forthCenterSearchRadius, edgePoints], () => {
+        nextTick(async () => {
+            if (clusteredFindersLocations.value != null && edgePoints.value != null && binarizedImage.value != null) {
+                startTiming("area Markings");
+
+                const [squareA, squareB, squareC] = calculateFinderBoundaries(
+                    edgePoints.value[0],
+                    edgePoints.value[1],
+                    edgePoints.value[2]
+                );
+                const finderArea = fourthFinderSearchBoundary(
+                    edgePoints.value[0],
+                    edgePoints.value[1],
+                    edgePoints.value[2],
+                    forthCenterSearchRadius.value
+                );
+
+                let drawMarkingsImage = binarizedImage.value.copyImage();
+                drawMarkingsImage.drawSquareInPlace(...squareA, "orange");
+                drawMarkingsImage.drawSquareInPlace(...squareB, "orange");
+                drawMarkingsImage.drawSquareInPlace(...squareC, "orange");
+                drawMarkingsImage.drawSquareInPlace(...finderArea, "red");
+
+                areaMarkings.value = drawMarkingsImage;
+
+                endTiming("area Markings");
+            }
+        });
+    });
+
     const reProjected = ref<Image | null>(null);
     const reProjectOffsetMin = ref<number>(5);
     const reProjectOffsetMax = ref<number>(100);
@@ -341,6 +377,7 @@ export default defineStore("decoding", () => {
         findersVImage.value = null;
         findersLocations.value = null;
         clusteredFindersLocations.value = null;
+        areaMarkings.value = null;
         reProjected.value = null;
     }
     function start(image: Image) {
@@ -363,6 +400,7 @@ export default defineStore("decoding", () => {
         findersLocationsCulled,
         clusteredFindersLocations,
         reProjected,
+        areaMarkings,
 
         // settings
         resizedImageSizeMin,
@@ -392,6 +430,9 @@ export default defineStore("decoding", () => {
         cullHarshnessMin,
         cullHarshnessMax,
         cullHarshness,
+        forthCenterSearchRadiusMin,
+        forthCenterSearchRadiusMax,
+        forthCenterSearchRadius,
         fovxMin,
         fovxMax,
         fovx,
