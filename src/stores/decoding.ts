@@ -256,7 +256,7 @@ export default defineStore("decoding", () => {
                         fourthCenterMeta[1][0],
                         fourthCenterMeta[1][1],
                         fourthCenterMeta[1][2],
-                        fourthCenterMeta[0],
+                        fourthCenterMetaProjection, // give this into transformation step, because it is right SOMETIMES
                     ];
                     edgePoints.value = structuredClone(centers); // do not give reference that is used here into ref
                     console.log("This is drawn", edgePoints.value);
