@@ -167,6 +167,9 @@ export default defineStore("decoding", () => {
     const cullHarshnessMin = ref<number>(1);
     const cullHarshnessMax = ref<number>(100);
     const cullHarshness = ref<number>(35);
+    const zbMin = ref<number>(0.5);
+    const zbMax = ref<number>(4.5);
+    const zb = ref<number>(3);
     // start fov computations
     const fovxMin = ref<number>(10);
     const fovxMax = ref<number>(170);
@@ -249,7 +252,8 @@ export default defineStore("decoding", () => {
                         binarizedImage.value.getWidth(),
                         binarizedImage.value.getHeight(),
                         fx.value,
-                        fy.value
+                        fy.value,
+                        zb.value
                     );
                     const fourthCenterMeta = calculateFourthCenterSquare(average0, average1, average2);
                     const centers: [FinderCoordinateMeta, FinderCoordinateMeta, FinderCoordinateMeta, FinderCoordinate] = [
@@ -281,7 +285,7 @@ export default defineStore("decoding", () => {
                     clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[0][0]], "blue", 30);
                     clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[1][0]], "red", 30);
                     clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[2][0]], "green", 30);
-                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [centers[3]], "orange", 30);
+                    clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [fourthCenterMeta[0]], "orange", 30);
                     clusterDrawTarget = drawFinderPointsOnImage(clusterDrawTarget, [fourthCenterMetaProjection], "purple", 30);
 
                     clusteredFindersLocations.value = clusterDrawTarget;
@@ -441,5 +445,8 @@ export default defineStore("decoding", () => {
         fovyMax,
         fovy,
         fy,
+        zbMin,
+        zbMax,
+        zb,
     };
 });

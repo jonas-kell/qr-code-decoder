@@ -133,6 +133,14 @@
             :only-end="false"
             :slider-precision-power="-1"
         ></slider-group>
+        <slider-group
+            v-model="decodingStore.zb"
+            :min="decodingStore.zbMin"
+            :max="decodingStore.zbMax"
+            label="zb Parameter"
+            :slider-precision-power="-1"
+            :only-end="false"
+        ></slider-group>
         <image-display-application
             :image-to-display="decodingStore.clusteredFindersLocations as Image | null"
         ></image-display-application>

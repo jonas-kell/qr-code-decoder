@@ -406,13 +406,13 @@ export function calculateFourthCenterProjection(
     width: number,
     height: number,
     fx: number,
-    fy: number
+    fy: number,
+    zb: number // tested to have no effect?
 ): FinderCoordinate {
     const [reorderedA, reorderedB, reorderedC] = orderThreeCentersCyclically(coord1, coord2, coord3);
 
     const w = width / 2;
     const h = height / 2;
-    const zb = 1; // tested to have no effect
 
     const XA = reorderedA[0][0] - w;
     const YA = reorderedA[0][1] - h;
