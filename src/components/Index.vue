@@ -143,6 +143,7 @@
         ></slider-group>
         <image-display-application
             :image-to-display="decodingStore.clusteredFindersLocations as Image | null"
+            :display-data="true"
         ></image-display-application>
         <h3>Markings and fourth location</h3>
         <slider-group
