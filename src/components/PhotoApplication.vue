@@ -210,6 +210,7 @@
                     class="v-col-12"
                     autoplay
                     :style="{ display: (!hasCamera || hasImage) ?? false ? 'none' : 'revert' }"
+                    playsinline
                 ></video>
 
                 <template v-if="!hasImage">
