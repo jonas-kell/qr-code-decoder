@@ -1,4 +1,4 @@
-# QR Code DEcoder
+# QR Code Decoder
 
 A PWA that provides a step-by step explanation how to extract the information stored in a QR-Code from an image.
 
